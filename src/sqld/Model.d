@@ -4,48 +4,51 @@ import sqld.base;
 import std.stdio;
 import std.array : split, join;
 import std.conv : to;
+import std.string : toLower;
+
+alias string[string] ModelData;
 
 /**
  * Represents database row
  */
 abstract class Model(T)
 {
+    
     /**
      * Row data, as AA
      */
-    protected string[string] data;
+    protected string[string] _data;
     
     /**
      * User defined fields
      */
-    protected string[] fields;
+    protected string[] _fields;
     
     /**
      * Database connection
      */
-    protected Database db;
-    
+    protected Database _db;
     
     
     /**
      * Creates new Model from data
      */
-    this(string[string] d)
+    this(ModelData d)
     {
-        data = d;
-        db = Database.instance;
+        _data = d;
+        _db = Database.instance;
     }
      
     public string opDispatch(string n)()
     {
-        return data[n]; 
+        return _data[n]; 
     } 
     
     public void opDispatch(string n, T)(T val)
     {
-        data[n] = to!string(val);
+        _data[n] = to!string(val);
     }
-    
+        
     /**
      * Saves changes done to model
      */
@@ -53,17 +56,17 @@ abstract class Model(T)
     {
         string[] sets;
         
-        foreach(field; fields)
+        foreach(field; _fields)
         {
-            sets ~= "`"~field~"`='"~data[field]~"'";
+            sets ~= "`"~field~"`='"~_data[field]~"'";
         }
         
-        string query = db.format("UPDATE `{0}` SET {1} WHERE `id`={2}", 
-            T.stringof,
+        string query = _db.format("UPDATE `{0}` SET {1} WHERE `id`={2}", 
+            tableName,
             sets.join(", "),
-            data["id"]);
+            _data["id"]);
         
-        db.execute(query);
+        _db.execute(query);
     }
     
     //-------------- STATIC
@@ -78,11 +81,9 @@ abstract class Model(T)
      */
     public static T findId(int i)
     {
-        string table = T.stringof;
-        
         auto db = Database.instance;
-        auto res = db.query("SELECT * FROM `{0}` WHERE `id`='{1}'", table, to!string(i));
-        string[string] row;
+        auto res = db.query("SELECT * FROM `{0}` WHERE `id`='{1}'", tableName, to!string(i));
+        ModelData row;
         
         if(res.length > 0) {
            row = res.fetchAssoc();
@@ -106,12 +107,11 @@ abstract class Model(T)
      */
     public static T[] findBy(V)(string name, V value)
     {
-        string table = T.stringof;
         T[] ret;
         
         auto db = Database.instance;
         auto res = db.query("SELECT * FROM `{0}` WHERE `{1}`='{2}'", 
-            table, 
+            tableName, 
             name,
             to!string(value));
         
@@ -123,10 +123,83 @@ abstract class Model(T)
         
         res.free();
         return ret;
+    } 
+    
+    /** 
+     * Returns first row
+     *
+     * Returns:
+     *  Model with first row data
+     */
+    public static T first()
+    {
+        return first(1)[0];
     }
-}
-
-string nameOf(Object o)
-{
-    return (typeid(o).name.split(".")[$-1]);
+    
+    /** 
+     * Returns first rows
+     *
+     * Params:
+     *  i = Number of rows to fetch
+     *
+     * Returns:
+     *  Model with first row data
+     */
+    public static T[] first(ulong i)
+    {
+        T[] ret;
+        
+        auto db = Database.instance;
+        auto res = db.query("SELECT * FROM `{0}` WHERE 1 LIMIT {1}", tableName, to!string(i));
+        
+        if(res.length > 0) {
+           ret ~= new T(res.fetchAssoc());
+        } else {
+            throw new Exception("No rows in"~ tableName);
+        }
+        res.free();
+        return ret;
+    }
+    
+    /** 
+     * Returns last row
+     *
+     * Returns:
+     *  Model with first row data
+     */
+    public static T last()
+    {
+        return last(1)[0];
+    }
+    
+    /** 
+     * Returns first rows
+     *
+     * Params:
+     *  i = Number of rows to fetch
+     *
+     * Returns:
+     *  Model with first row data
+     */
+    public static T[] last(ulong i)
+    {
+        T[] ret;
+        
+        auto db = Database.instance;
+        auto res = db.query("SELECT * FROM `{0}` ORDER BY `id` DESC LIMIT {1}", tableName, to!string(i));
+        
+        if(res.length > 0) {
+           ret ~= new T(res.fetchAssoc());
+        } else {
+            throw new Exception("No rows in"~ tableName);
+        }
+        res.free();
+        return ret;
+    }
+    
+    static string tableName() @property
+    {
+        return T.stringof.toLower();
+    }
+    
 }

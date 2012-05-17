@@ -11,7 +11,8 @@ import sqld.base,
        sqld.c.mysql,       
        sqld.core.mysql.params,
        sqld.core.mysql.info,
-       sqld.core.mysql.result;
+       sqld.core.mysql.result,
+       sqld.core.mysql.statement;
        
 import std.string : toStringz;
 import std.conv   : to;
@@ -297,71 +298,6 @@ class MySQL : Database
     }
     
     /**
-     * Formats string
-     *
-     * Replaces occurences of `{#}` with corresponding values.
-     * Inserted values are escaped. To use this function, connection
-     * must be estabilished, if you want to use offline version,
-     * please use static version of this function.
-     *
-     * Examples:
-     * ---
-     * auto db = new MySQL(...);
-     * auto q = db.format("SELECT * FROM `db` WHERE `id`='{0}'", "i'd");
-     * writeln(q); // SELECT * FROM `db` WHERE `id`='i\'d
-     * ---
-     * 
-     * Params:
-     *  query = Query to execute
-     *  values = Values to bind
-     * 
-     * Returns:
-     *  Formatted string
-     */
-    public string format(string query, string[] values...)
-    {
-        string result = query;
-        
-        foreach(i, value; values)
-        {
-            result = replace(result, "{"~to!string(i)~"}", escape(value));
-        }
-        
-        return result;
-    }
-    
-    /**
-     * Formats string
-     *
-     * Replaces occurences of `{#}` with corresponding values.
-     * Inserted values are escaped. 
-     *
-     * Examples:
-     * ---
-     * auto q = MySQL.Format("SELECT * FROM `db` WHERE `id`='{0}'", "i'd");
-     * writeln(q); // SELECT * FROM `db` WHERE `id`='i\'d
-     * ---
-     * 
-     * Params:
-     *  query = Query to execute
-     *  values = Values to bind
-     * 
-     * Returns:
-     *  Formatted string
-     */
-    public static string Format(string query, string[] values...)
-    {
-        string result = query;
-        
-        foreach(i, value; values)
-        {
-            result = result.replace("{"~to!string(i)~"}", Escape(value));
-        }
-        
-        return result;
-    }
-    
-    /**
      * Escapes string
      *
      * To use this function, connection to server must be estabilished.
@@ -404,7 +340,12 @@ class MySQL : Database
         
         return to!(string)(tmp);
     }
-     
+    
+    public MySQLStatement prepare(string sql)
+    {
+        return new MySQLStatement(sql, _sql);
+    }
+    
     /**
      * Begins transaction
      *

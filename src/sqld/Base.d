@@ -17,7 +17,7 @@ import sqld.dsn,
 /**
  * Represents abstract database
  */
-interface Database
+abstract class Database
 {
     /**
      * Connects to database
@@ -64,6 +64,12 @@ interface Database
     
     /**
      * Creates new database instance
+     * 
+     * Params:
+     *  _dsn = Data source name
+     *
+     * Returns:
+     *  Database instance
      */
     static Database factory(string _dsn)
     {
@@ -94,6 +100,15 @@ interface Database
     
     /**
      * Formats string
+     *
+     * Replaces occurences of `{#}` with corresponding values.
+     * Inserted values are escaped.
+     *
+     * Examples:
+     * ---
+     * auto q = db.format("SELECT * FROM `db` WHERE `id`='{0}'", "i'd");
+     * writeln(q); // SELECT * FROM `db` WHERE `id`='i\'d
+     * ---
      * 
      * Params:
      *  query = Query to execute
@@ -102,7 +117,17 @@ interface Database
      * Returns:
      *  Formatted string
      */
-    public string format(string query, string[] values...);
+    public string format(string query, string[] values...)
+    {
+        string result = query;
+        
+        foreach(i, value; values)
+        {
+            result = replace(result, "{"~to!string(i)~"}", escape(value));
+        }
+        
+        return result;
+    }
     
     /**
      * Escapes string
