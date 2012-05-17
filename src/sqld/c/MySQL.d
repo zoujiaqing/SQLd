@@ -53,6 +53,8 @@ struct MYSQL_FIELD {
       void* extension;
 }
 
+char mysql_autocommit(MYSQL*, char);
+
 
 const(char)* mysql_get_client_info();
 MYSQL* mysql_init(MYSQL*);
@@ -92,7 +94,7 @@ void mysql_data_seek(MYSQL_RES*, ulong);
 const(char)* mysql_get_ssl_cipher(MYSQL*);
 
 uint mysql_escape_string(char*, const(char)*, ulong);
-uint mysql_real_escape_string(MYSQL*, char*, const(char)*, ulong);
+uint mysql_real_escape_string(MYSQL*, char*, const(char)*, uint);
 
 void mysql_free_result(MYSQL_RES*);
 

@@ -10,6 +10,10 @@ import std.array     : replace;
 import std.conv      : to;
 import std.algorithm : countUntil;
 
+import sqld.dsn,
+       sqld.core.mysql.database;
+
+
 /**
  * Represents abstract database
  */
@@ -18,12 +22,13 @@ interface Database
     /**
      * Connects to database
      */
-    abstract typeof(this) connect();
+    abstract typeof(this) open();
     
     /**
      * Disconnects from database
      */
     abstract typeof(this) close();
+    
     
     /**
      * Last error
@@ -52,8 +57,89 @@ interface Database
      *  Result
      */
     abstract Result query(string query, string[] params...);
+    
+    abstract Database beginTransaction();
+    abstract Database commit();
+    abstract Database rollback();
+    
+    /**
+     * Creates new database instance
+     */
+    static Database factory(string _dsn)
+    {
+        auto dsn = Dsn(_dsn);
+        
+        if(dsn.driver == "mysql")
+        {
+            Database.instance = new MySQL(dsn);
+            return Database.instance;
+        }
+        
+        assert(0, "Unsupported database type");
+    }
+    
+    /**
+     * Queries database with specified query
+     *
+     * Params:
+     *   query = Query to execute
+     *
+     * Throws:
+     *  DatabaseException
+     *
+     * Returns:
+     *   Self
+     */
+    public Database execute(string query, string[] values...);
+    
+    /**
+     * Formats string
+     * 
+     * Params:
+     *  query = Query to execute
+     *  values = Values to bind
+     * 
+     * Returns:
+     *  Formatted string
+     */
+    public string format(string query, string[] values...);
+    
+    /**
+     * Escapes string
+     *
+     * Params:
+     *  str = String to escape
+     *
+     * Returns:
+     *  Escaped string
+     */
+    public string escape(string str);
+
+    /**
+     * Active Database instance
+     */
+    static Database instance = null;
 }
 
+/**
+ * Database driver type
+ */
+enum DatabaseDriver
+{
+    ///
+    MySQL,
+    
+    ///
+    SQLite,
+    
+    ///
+    PostgreSQL
+} 
+
+
+/**
+ * Represents database query result
+ */
 interface Result
 {
     bool isValid() @property;
@@ -65,11 +151,13 @@ interface Result
     public ulong length() @property;
     alias length rowCount;
     
-    public string[] fetchRow();
-    public string[string] fetchAssoc();
+    public string[] fetchRow(string file = __FILE__, uint line = __LINE__);
+    public Row fetch(string file = __FILE__, uint line = __LINE__);
+    public string[string] fetchAssoc(string file = __FILE__, uint line = __LINE__);
     
     public ulong index() @property;
     public void index(ulong n) @property;
+    public void free();
     
     alias isValid empty;
     alias fetchRow front;

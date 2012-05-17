@@ -20,6 +20,14 @@ import std.conv : to;
  *     writeln(res.fetchRow());  
  * }
  * ---
+ *
+ * ---
+ * auto res = db.query("SELECT ...");
+ * foreach(row; res)
+ * {
+ *     writeln(row);
+ * }
+ * ---
  */
 class MySQLResult : Result
 {
@@ -140,7 +148,7 @@ class MySQLResult : Result
      * Returns:
      *  Array with current row data
      */
-    public string[] fetchRow()
+    public string[] fetchRow(string file = __FILE__, uint line = __LINE__)
     { 
         MYSQL_ROW crow;
         string[] row;
@@ -149,7 +157,7 @@ class MySQLResult : Result
         
         if(crow is null)
         {
-            throw new DatabaseException("Could not fetch row.");
+            throw new DatabaseException("Could not fetch row.", file, line);
         }
         
         for(int i; i < _fieldNum; i++ )
@@ -185,7 +193,7 @@ class MySQLResult : Result
      * Returns:
      *  Array with current row data
      */
-    public Row fetch()
+    public Row fetch(string file = __FILE__, uint line = __LINE__)
     {
         MYSQL_ROW crow;
         string[] row;
@@ -194,7 +202,7 @@ class MySQLResult : Result
         
         if(crow is null)
         {
-            throw new DatabaseException("Could not fetch row.");
+            throw new DatabaseException("Could not fetch row.", file, line);
         }
         
         for(int i; i < _fieldNum; i++ )
@@ -230,7 +238,7 @@ class MySQLResult : Result
      * Returns:
      *  Array with current row data
      */
-    public string[string] fetchAssoc()
+    public string[string] fetchAssoc(string file = __FILE__, uint line = __LINE__)
     {
         MYSQL_ROW crow;
         string[string] row;
@@ -239,10 +247,10 @@ class MySQLResult : Result
         
         if(crow is null)
         {
-            throw new DatabaseException("Could not fetch row.");
+            throw new DatabaseException("Could not fetch row.", file, line);
         }
         
-        for(int i; i < _fieldNum; i++ )
+        for(int i= 0; i < _fieldNum; i++ )
         {
             row[_fields[i]] = to!string(crow[i]);
         }
@@ -282,11 +290,12 @@ class MySQLResult : Result
      */
     public bool next()
     {
-        if( _index + 1 >= _rows  )
+        if( ++_index >= _rows  )
         {
             return false;
         }
-        index = ++_index;
+        
+        mysql_data_seek(_res, _index);
         return true;
     }
     

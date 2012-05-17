@@ -7,6 +7,7 @@
 module sqld.core.mysql.database;
 
 import sqld.base,
+       sqld.dsn,
        sqld.c.mysql,       
        sqld.core.mysql.params,
        sqld.core.mysql.info,
@@ -57,6 +58,7 @@ class MySQL : Database
         this.params.pass = password;
         this.params.db   = db;
         this.params.port = port;
+        this();
     }
     
     /**
@@ -68,8 +70,74 @@ class MySQL : Database
     public this(MySQLParams params)
     {
         this.params = params;
+        this();
     }
     
+    /**
+     * Creates new Database instance
+     * 
+     * Examples:
+     * ---
+     * auto dsn = Dsn("mysql:host=localhost;user=root;pass=...");
+     * auto db = new MySQL(dsn);
+     * db.open();
+     * // ...
+     * db.close();
+     * ---
+     * 
+     * Params:
+     *   dsn = DataSourceName
+     */
+    public this(Dsn dsn)
+    {
+        params.host = dsn["host"];
+        
+        if("user" in dsn) {
+            params.user = dsn["user"];
+        }
+        
+        if("pass" in dsn) {
+            params.pass = dsn["pass"];
+        }
+        
+        if("db" in dsn) {
+            params.db = dsn["db"];
+        }
+        
+        if("port" in dsn) {
+            try {
+                params.port = to!uint(dsn["port"]); 
+            } catch(Throwable e)
+            {
+                throw new Exception("Port variable is not numeric");
+            }
+        }
+        this();
+    }
+    
+    /**
+     * Creates new Database instance
+     *
+     * Examples:
+     * ---
+     * auto db = new MySQL("mysql:host=localhost;user=root;pass=...");
+     * db.open();
+     * // ...
+     * db.close();
+     * ---
+     * 
+     * Params:
+     *   dsn = DataSourceName
+     */
+    public this(string dsn)
+    {
+        this(Dsn(dsn));
+    }
+    
+    protected this()
+    {
+        
+    }
     
     public ~this()
     {
@@ -80,13 +148,21 @@ class MySQL : Database
     /**
      * Connects to database
      *
+     * Examples:
+     * ---
+     * auto db = new MySQL("mysql:host=localhost;user=root;pass=...");
+     * db.open();
+     * // ...
+     * db.close();
+     * ---
+     *
      * Returns:
      *  MySQL
      *
      * Throws:
      *  DatabaseException if could not connect
      */
-    public self connect()
+    public self open()
     {
         _sql = mysql_init(null);
         
@@ -110,9 +186,17 @@ class MySQL : Database
         
         return this;
     }
-    
+     
     /**
      * Disconnects from database
+     *
+     * Examples:
+     * ---
+     * auto db = new MySQL("mysql:host=localhost;user=root;pass=...");
+     * db.open();
+     * // ...
+     * db.close();
+     * ---
      *
      * Returns:
      *  MySQL self
@@ -124,10 +208,17 @@ class MySQL : Database
         return this;
     }
     
-    
-    
     /**
      * Queries database with specified query
+     *
+     * Examples:
+     * ---
+     * db.execute("INSERT ...").execute("UPDATE ..."); // No result set is returned
+     * ---
+     *
+     * ---
+     * auto rows = db.execute("INSERT ...").affectedRows;
+     * ---
      *
      * Params:
      *   query = Query to execute
@@ -141,18 +232,34 @@ class MySQL : Database
     public self execute(string query, string[] values...)
     {
         string q = format(query, values);
-        uint res = cast(uint)mysql_real_query(_sql, query.c, query.length);
+        uint res = mysql_query(_sql, q.c);
         
         if(res)
         {
             throw new DatabaseException("Could not execute query: "~q);
         }
-        
         return this;
     }
     
     /**
      * Executes query and returns result
+     *
+     * Examples:
+     * ---
+     * auto res = db.query("SELECT ...");
+     * while(res.isValid)
+     * {
+     *     writeln(res.fetchAssoc());
+     *     res.next();
+     * }
+     * ---
+     * ---
+     * auto res = db.query("SELECT ...");
+     * foreach(row; res)
+     * {
+     *     writeln(res["id"]);
+     * }
+     * ---
      *
      * Params:
      *  query = Query to execute
@@ -169,8 +276,8 @@ class MySQL : Database
         MYSQL_RES* result;
         int res;
         
-        query = format(query, values);
-        res = mysql_query(_sql, query.c);
+        string q = format(query, values);
+        res = mysql_query(_sql, q.c);
         
         if(res)
         {
@@ -217,7 +324,7 @@ class MySQL : Database
         
         foreach(i, value; values)
         {
-            result = result.replace("{"~to!string(i)~"}", this.escape(value));
+            result = replace(result, "{"~to!string(i)~"}", escape(value));
         }
         
         return result;
@@ -269,10 +376,11 @@ class MySQL : Database
      */
     public string escape(string str)
     {
-        size_t length = str.length * 2 + 1;
-        char[] tmp = new char[length];
+        char[] tmp = new char[str.length * 2 + 1];
+        uint u;
         
-        mysql_real_escape_string(_sql, tmp.ptr, str.c, str.length);
+        u = cast(uint)mysql_real_escape_string(_sql, tmp.ptr, str.c, cast(uint)str.length);
+        tmp.length = u;
         
         return to!(string)(tmp);
     }
@@ -288,10 +396,11 @@ class MySQL : Database
      */
     public static string Escape(string str)
     {
-        size_t length = str.length * 2 + 1;
-        char[] tmp = new char[length];
+        char[] tmp = new char[str.length * 2 + 1];
+        uint u;
         
-        mysql_escape_string(tmp.ptr, str.c, str.length);
+        u = cast(uint)mysql_escape_string(tmp.ptr, str.c, str.length);
+        tmp.length = u;
         
         return to!(string)(tmp);
     }
@@ -340,9 +449,15 @@ class MySQL : Database
      */
     public MySQLInfo info() @property
     {
-        return MySqlInfo(_sql);
+        return MySQLInfo(_sql);
     }
     
+    /**
+     * Number of affected rows
+     *
+     * Returns:
+     *  Number of affected rows in last query
+     */
     public ulong affectedRows() @property
     {
         return mysql_affected_rows(_sql);
@@ -384,6 +499,17 @@ class MySQL : Database
     public MYSQL* handle() @property
     {
         return _sql;
+    }
+    
+    /**
+     * Sets autocommit value
+     *
+     * Params:
+     *  ac = Autocommit value
+     */
+    public void autoCommit(bool ac) @property
+    {
+        mysql_autocommit(_sql, cast(int)ac);
     }
     
 }
