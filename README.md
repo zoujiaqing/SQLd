@@ -6,10 +6,51 @@ It provides unified API for diffrent database drivers, such as MySQL, SQLite and
 
 ## Examples
 
+#### Simple Select
+```D
+import sqld.base;
+
+void main()
+{   
+    auto db = Database.factory("mysql:host=localhost;user=root");    
+    db.open();
+    
+    auto res = db.query("SELECT * FROM `test`");
+    foreach(row; res)
+    {
+        writeln(row["id"]);
+    }
+    res.free();
+    
+    db.close();
+}
+```
+
+#### Statements
+
+```D
+import std.stdio, sqld.base;
+
+void main()
+{   
+    auto db = Database.factory("mysql:host=localhost;user=root;pass=root;db=test");
+    db.open();
+    
+    db.prepare("UPDATE `?` SET `name`=':name' WHERE `id`=:id")
+      .bind("test")
+      .bind(":id",   "0")
+      .bind(":name", "name" )
+      .execute();
+        
+    db.close();
+}
+
+```
+
 ##### Using ActiveRecord
 ```D
 import std.stdio,
-       sqld.mysql,
+       sqld.base,
        sqld.model;
 
 void main()

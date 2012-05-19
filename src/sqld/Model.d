@@ -8,6 +8,7 @@ import std.string : toLower;
 
 alias string[string] ModelData;
 
+
 /**
  * Represents database row
  */
@@ -17,7 +18,7 @@ abstract class Model(T)
     /**
      * Row data, as AA
      */
-    protected string[string] _data;
+    protected ModelData _data;
     
     /**
      * User defined fields
@@ -68,6 +69,19 @@ abstract class Model(T)
         
         _db.execute(query);
     }
+    
+    void remove()
+    {
+        
+    }
+    
+    /**
+     * Sets row that should be updated    
+     */
+    protected void __fields(string[] fields) @property
+    {
+        _fields = ["id"] ~ fields;
+    } 
     
     //-------------- STATIC
     /**

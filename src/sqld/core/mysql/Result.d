@@ -31,44 +31,18 @@ import std.conv : to;
  */
 class MySQLResult : Result
 {
-    /**
-     * Self-instance
-     */
     alias typeof(this) self;
     
-    /**
-     * MySQL query result
-     */
     protected MYSQL_RES* _res;
-    
-    /**
-     * Database instance
-     */
     protected MySQL _db;
-    
-    /**
-     * Is result usable?
-     */
     protected bool _usable;
     
-    /**
-     * Fields
-     */
-    protected string[] _fields;
     
-    /**
-     * Number of fields
-     */
+    protected string[] _fields;
     protected int _fieldNum;
     
-    /**
-     * Number of affected rows
-     */
-    protected ulong _rows;
     
-    /**
-     * Current row
-     */
+    protected ulong _rows;
     protected ulong _index;
     
     
@@ -195,25 +169,7 @@ class MySQLResult : Result
      */
     public Row fetch(string file = __FILE__, uint line = __LINE__)
     {
-        MYSQL_ROW crow;
-        string[] row;
-        
-        crow = mysql_fetch_row(_res);
-        
-        if(crow is null)
-        {
-            throw new DatabaseException("Could not fetch row.", file, line);
-        }
-        
-        for(int i; i < _fieldNum; i++ )
-        {
-            row ~= to!string(crow[i]);
-        }
-        
-        // Sync
-        index = _index;
-        
-        return new Row(row, _fields);
+        return new Row(fetchRow, _fields);
     }
     
     /**
@@ -397,6 +353,6 @@ class MySQLResult : Result
     {
         return _index >= _rows;
     }
-    alias fetchRow front;
-    alias next popFront;
+    Row front() { return fetch(); }
+    void popFront() { next(); }
 }

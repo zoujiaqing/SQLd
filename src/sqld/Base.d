@@ -10,10 +10,11 @@ import std.array     : replace;
 import std.conv      : to;
 import std.algorithm : countUntil;
 
-import sqld.dsn,
+public import sqld.dsn,
+       sqld.statement,
        sqld.core.mysql.database;
 
-
+ 
 /**
  * Represents abstract database
  */
@@ -58,31 +59,21 @@ abstract class Database
      */
     abstract Result query(string query, string[] params...);
     
-    abstract Database beginTransaction();
-    abstract Database commit();
-    abstract Database rollback();
+    /**
+     * Begins transaction
+     */
+    //abstract Transaction beginTransaction(); Work In Progress
     
     /**
-     * Creates new database instance
-     * 
+     * Prepares new statement with speicified query
+     *
      * Params:
-     *  _dsn = Data source name
+     *  query = Statement query
      *
      * Returns:
-     *  Database instance
+     *  New statement
      */
-    static Database factory(string _dsn)
-    {
-        auto dsn = Dsn(_dsn);
-        
-        if(dsn.driver == "mysql")
-        {
-            Database.instance = new MySQL(dsn);
-            return Database.instance;
-        }
-        
-        assert(0, "Unsupported database type");
-    }
+    abstract Statement prepare(string query);
     
     /**
      * Queries database with specified query
@@ -94,9 +85,9 @@ abstract class Database
      *  DatabaseException
      *
      * Returns:
-     *   Self
+     *   Affected rows
      */
-    public Database execute(string query, string[] values...);
+    public ulong execute(string query, string[] values...);
     
     /**
      * Formats string
@@ -141,25 +132,32 @@ abstract class Database
     public string escape(string str);
 
     /**
-     * Active Database instance
+     * Current database instance
      */
     static Database instance = null;
+    
+    /**
+     * Creates new database instance
+     * 
+     * Params:
+     *  _dsn = Data source name
+     *
+     * Returns:
+     *  Database instance
+     */
+    static Database factory(string _dsn)
+    {
+        auto dsn = Dsn(_dsn);
+        
+        if(dsn.driver == "mysql")
+        {
+            Database.instance = new MySQL(dsn);
+            return Database.instance;
+        }
+        
+        assert(0, "Unsupported database type");
+    }
 }
-
-/**
- * Database driver type
- */
-enum DatabaseDriver
-{
-    ///
-    MySQL,
-    
-    ///
-    SQLite,
-    
-    ///
-    PostgreSQL
-} 
 
 
 /**
@@ -184,9 +182,9 @@ interface Result
     public void index(ulong n) @property;
     public void free();
     
-    alias isValid empty;
-    alias fetchRow front;
-    alias next popFront;
+    bool empty();
+    Row front();
+    void popFront();
 }
 
 /**
@@ -307,22 +305,6 @@ class Row
      * Returns row value
      *
      * Params:
-     *  Field id
-     * 
-     * Returns:
-     *  Row value
-     */
-    public string opIndex(uint i)
-    {
-        return _data[i];
-    }
-    
-    // ToDo: Add keyExists etc
-    
-    /**
-     * Returns row value
-     *
-     * Params:
      *  Field name
      * 
      * Returns:
@@ -337,6 +319,20 @@ class Row
             throw new Exception("Index does not exists");
         }
         
+        return _data[i];
+    }
+    
+    /**
+     * Returns row value
+     *
+     * Params:
+     *  Field id
+     * 
+     * Returns:
+     *  Row value
+     */
+    public string opIndex(uint i)
+    {
         return _data[i];
     }
     

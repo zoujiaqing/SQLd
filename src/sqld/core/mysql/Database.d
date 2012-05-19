@@ -11,8 +11,7 @@ import sqld.base,
        sqld.c.mysql,       
        sqld.core.mysql.params,
        sqld.core.mysql.info,
-       sqld.core.mysql.result,
-       sqld.core.mysql.statement;
+       sqld.core.mysql.result;
        
 import std.string : toStringz;
 import std.conv   : to;
@@ -228,9 +227,9 @@ class MySQL : Database
      *  DatabaseException
      *
      * Returns:
-     *   MySQL Self
+     *   Affected rows
      */
-    public self execute(string query, string[] values...)
+    public ulong execute(string query, string[] values...)
     {
         string q = format(query, values);
         uint res = mysql_query(_sql, q.c);
@@ -239,7 +238,7 @@ class MySQL : Database
         {
             throw new DatabaseException("Could not execute query: "~q);
         }
-        return this;
+        return mysql_affected_rows(_sql);
     }
     
     /**
@@ -322,28 +321,17 @@ class MySQL : Database
     }
     
     /**
-     * Escapes string
+     * Prepares new statement with speicified query
      *
      * Params:
-     *  str = String to escape
+     *  query = Statement query
      *
      * Returns:
-     *  Escaped string
+     *  New statement
      */
-    public static string Escape(string str)
+    public Statement prepare(string query)
     {
-        char[] tmp = new char[str.length * 2 + 1];
-        uint u;
-        
-        u = cast(uint)mysql_escape_string(tmp.ptr, str.c, str.length);
-        tmp.length = u;
-        
-        return to!(string)(tmp);
-    }
-    
-    public MySQLStatement prepare(string sql)
-    {
-        return new MySQLStatement(sql, _sql);
+        return new Statement(this, query);
     }
     
     /**
@@ -356,7 +344,7 @@ class MySQL : Database
     {
         execute("BEGIN;");
         return this;
-    }
+    } 
     
     /**
      * Commits transaction changes
@@ -383,6 +371,17 @@ class MySQL : Database
     }
     
     /**
+     * Checks if connection is estabilished
+     *
+     * Returns:
+     *  True if connected to database, false otherwise
+     */
+    public bool isConnected() @property
+    {
+        return _sql == null;
+    }
+    
+    /**
      * Returns MySQL client and server information
      *
      * Returns:
@@ -391,17 +390,6 @@ class MySQL : Database
     public MySQLInfo info() @property
     {
         return MySQLInfo(_sql);
-    }
-    
-    /**
-     * Number of affected rows
-     *
-     * Returns:
-     *  Number of affected rows in last query
-     */
-    public ulong affectedRows() @property
-    {
-        return mysql_affected_rows(_sql);
     }
     
     /**
