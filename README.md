@@ -73,8 +73,10 @@ class Posts : Model!Posts
     {
         super(data);
         
-        // Only fields specified here will be updated on save
-        fields = ["id", "value", "author"];
+        // Only fields specified here will be updated on save.
+        // 'id' fields is added automaticly.
+        // Must be set after parent constructor
+        __fields = ["value", "author"];
     }
 }
 ```
