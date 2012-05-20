@@ -103,7 +103,7 @@ abstract class Database
     /**
      * Current database instance
      */
-    static Database instance = null;
+    static __gshared Database instance = null;
     
     /**
      * Creates new database instance
@@ -221,7 +221,7 @@ class DatabaseError
      * Returns:
      *  Formatted error string
      */
-    public string toString()
+    public override string toString()
     {
         return toString("($n):$m");
     }
@@ -360,7 +360,7 @@ class Row
      * Returns:
      *  Row representation, as string
      */
-    public string toString()
+    public override string toString()
     {
         return to!string(toAssocArray());
     }

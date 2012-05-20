@@ -35,7 +35,7 @@ class MySQL : Database
     /**
      * MySQL handle
      */
-    protected MYSQL* _sql;
+    __gshared protected MYSQL* _sql;
     
     
     
@@ -137,7 +137,6 @@ class MySQL : Database
     
     protected this()
     {
-        
     }
     
     public ~this()
@@ -163,7 +162,7 @@ class MySQL : Database
      * Throws:
      *  DatabaseException if could not connect
      */
-    public self open()
+    public override self open()
     {
         _sql = mysql_init(null);
         
@@ -185,9 +184,10 @@ class MySQL : Database
             throw new DatabaseException("Could not connect");
         }
         
+        
         return this;
     }
-     
+    
     /**
      * Disconnects from database
      *
@@ -202,7 +202,7 @@ class MySQL : Database
      * Returns:
      *  MySQL self
      */
-    public self close()
+    public override self close()
     {
         mysql_close(_sql);
         
@@ -230,10 +230,9 @@ class MySQL : Database
      * Returns:
      *   Affected rows
      */
-    public ulong execute(string query, string file = __FILE__, uint line = __LINE__)
+    public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         uint res = mysql_query(_sql, query.c);
-        
         if(res)
         {
             throw new DatabaseException("Could not execute query: "~query, file, line);
@@ -271,7 +270,7 @@ class MySQL : Database
      * Returns:
      *  MySQLResult
      */
-    public MySQLResult query(string query, string file = __FILE__, uint line = __LINE__)
+    public override MySQLResult query(string query, string file = __FILE__, uint line = __LINE__)
     {
         __gshared MYSQL_RES* result;
         int res;
@@ -307,7 +306,7 @@ class MySQL : Database
      * Returns:
      *  Escaped string
      */
-    public string escape(string str)
+    public override string escape(string str)
     {
         char[] tmp = new char[str.length * 2 + 1];
         uint u;
@@ -327,7 +326,7 @@ class MySQL : Database
      * Returns:
      *  New statement
      */
-    public Statement prepare(string query)
+    public override Statement prepare(string query)
     {
         return new Statement(this, query);
     }
@@ -398,7 +397,7 @@ class MySQL : Database
      * Returns:
      *  DatabaseError Last error
      */
-    public DatabaseError error() @property
+    public override DatabaseError error() @property
     {
         int    no  = mysql_errno(_sql);
         string msg = to!string(mysql_error(_sql));
@@ -412,7 +411,7 @@ class MySQL : Database
      * Returns:
      *  True if any error occured, false otherwise
      */
-    public bool isError() @property
+    public override bool isError() @property
     {
         return this.error.number != 0;
     }

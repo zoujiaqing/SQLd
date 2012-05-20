@@ -77,7 +77,7 @@ class SQLite : Database
      */
     public this(Dsn dsn)
     {
-        this.file = dsn["host"];
+        this.file = dsn["file"];
         
         this();
     }
@@ -109,7 +109,7 @@ class SQLite : Database
      * Throws:
      *  DatabaseException if could not connect
      */
-    public self open()
+    public override self open()
     {
         int res = sqlite3_open(file.c, &_sql);
         
@@ -135,7 +135,7 @@ class SQLite : Database
      * Returns:
      *  SQLite self
      */
-    public self close()
+    public override self close()
     {
         sqlite3_close(_sql);
         
@@ -163,7 +163,7 @@ class SQLite : Database
      * Returns:
      *   Affected rows
      */
-    public ulong execute(string query, string file = __FILE__, uint line = __LINE__)
+    public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         int res = sqlite3_exec(_sql, query.c, null, null, null);
         
@@ -204,7 +204,7 @@ class SQLite : Database
      * Returns:
      *  MySQLResult
      */
-    public SQLiteResult query(string query, string file = __FILE__, uint line = __LINE__)
+    public override SQLiteResult query(string query, string file = __FILE__, uint line = __LINE__)
     {
         sqlite3_stmt* stmt;
         int res;
@@ -230,7 +230,7 @@ class SQLite : Database
      * Returns:
      *  Escaped string
      */
-    public string escape(string str)
+    public override string escape(string str)
     {
         return to!(string)(sqlite3_mprintf("%q".c, str.c));
     }
@@ -244,7 +244,7 @@ class SQLite : Database
      * Returns:
      *  New statement
      */
-    public Statement prepare(string query)
+    public override Statement prepare(string query)
     {
         return new Statement(this, query);
     }
@@ -269,7 +269,7 @@ class SQLite : Database
      * Returns:
      *  DatabaseError Last error
      */
-    public DatabaseError error() @property
+    public override DatabaseError error() @property
     {
         int    no  = sqlite3_errcode(_sql);
         string msg = to!string(sqlite3_errmsg(_sql));
@@ -283,7 +283,7 @@ class SQLite : Database
      * Returns:
      *  True if any error occured, false otherwise
      */
-    public bool isError() @property
+    public override bool isError() @property
     {
         return this.error.number != 0;
     }
