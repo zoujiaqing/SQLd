@@ -10,9 +10,10 @@ import std.array     : replace;
 import std.conv      : to;
 import std.algorithm : countUntil;
 
-public import sqld.dsn,
-       sqld.statement,
-       sqld.core.mysql.database;
+import sqld.dsn,
+       sqld.statement,       
+       sqld.core.mysql.database,
+       sqld.core.sqlite.database;
 
  
 /**
@@ -52,12 +53,11 @@ abstract class Database
      *
      * Params:
      *  query = Query to execute
-     *  values = Values to bind
      *
      * Returns:
      *  Result
      */
-    abstract Result query(string query, string[] params...);
+    abstract Result query(string query, string file = __FILE__, uint line = __LINE__);
     
     /**
      * Begins transaction
@@ -87,38 +87,7 @@ abstract class Database
      * Returns:
      *   Affected rows
      */
-    public ulong execute(string query, string[] values...);
-    
-    /**
-     * Formats string
-     *
-     * Replaces occurences of `{#}` with corresponding values.
-     * Inserted values are escaped.
-     *
-     * Examples:
-     * ---
-     * auto q = db.format("SELECT * FROM `db` WHERE `id`='{0}'", "i'd");
-     * writeln(q); // SELECT * FROM `db` WHERE `id`='i\'d
-     * ---
-     * 
-     * Params:
-     *  query = Query to execute
-     *  values = Values to bind
-     * 
-     * Returns:
-     *  Formatted string
-     */
-    public string format(string query, string[] values...)
-    {
-        string result = query;
-        
-        foreach(i, value; values)
-        {
-            result = replace(result, "{"~to!string(i)~"}", escape(value));
-        }
-        
-        return result;
-    }
+    public ulong execute(string query, string file = __FILE__, uint line = __LINE__);
     
     /**
      * Escapes string
@@ -149,13 +118,21 @@ abstract class Database
     {
         auto dsn = Dsn(_dsn);
         
-        if(dsn.driver == "mysql")
+        switch(dsn.driver)
         {
-            Database.instance = new MySQL(dsn);
-            return Database.instance;
+            case "mysql":
+                Database.instance = new MySQL(dsn);
+            break;
+            
+            case "sqlite":
+                Database.instance = new SQLite(dsn);
+            break;
+            
+            default:
+                assert(0, "Unsupported database type");
         }
         
-        assert(0, "Unsupported database type");
+        return Database.instance;
     }
 }
 
@@ -170,16 +147,11 @@ interface Result
     void reset();
     
     public string[] fields() @property;
-    public int fieldCount() @property;
     public ulong length() @property;
-    alias length rowCount;
     
-    public string[] fetchRow(string file = __FILE__, uint line = __LINE__);
     public Row fetch(string file = __FILE__, uint line = __LINE__);
-    public string[string] fetchAssoc(string file = __FILE__, uint line = __LINE__);
     
     public ulong index() @property;
-    public void index(ulong n) @property;
     public void free();
     
     bool empty();
@@ -359,5 +331,37 @@ class Row
         }
         
         return result;
+    }
+    
+    /**
+     * Returns: associative array that represents row
+     */
+    public string[string] toAssocArray()
+    {
+        string[string] ret;
+        
+        foreach(i, field; _fields)
+            ret[field] = _data[i];
+        
+        return ret;
+    }
+    
+    /**
+     * Returns: associative array that represents row
+     */
+    public string[] toArray()
+    {
+        return _data;
+    }
+    
+    /**
+     * Returns row, as single string
+     *
+     * Returns:
+     *  Row representation, as string
+     */
+    public string toString()
+    {
+        return to!string(toAssocArray());
     }
 }

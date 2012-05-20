@@ -42,6 +42,11 @@ abstract class Model(T)
      
     public string opDispatch(string n)()
     {
+        if(n !in _data)
+        {
+            throw new Exception("Field '"~n~"' does not exists");
+        }
+        
         return _data[n]; 
     } 
     
@@ -62,12 +67,11 @@ abstract class Model(T)
             sets ~= "`"~field~"`='"~_data[field]~"'";
         }
         
-        string query = _db.format("UPDATE `{0}` SET {1} WHERE `id`={2}", 
-            tableName,
-            sets.join(", "),
-            _data["id"]);
-        
-        _db.execute(query);
+        _db.prepare("UPDATE `?` SET `?` WHERE `id`=?") 
+           .bind(tableName)
+           .bind(sets.join(", "))
+           .bind(_data["id"])
+           .execute();
     }
     
     void remove()
@@ -96,11 +100,15 @@ abstract class Model(T)
     public static T findId(int i)
     {
         auto db = Database.instance;
-        auto res = db.query("SELECT * FROM `{0}` WHERE `id`='{1}'", tableName, to!string(i));
+        auto res = db.prepare("SELECT * FROM `?` WHERE `id`='?'")
+                     .bind(tableName)
+                     .bind(i)
+                     .execute();
+                     
         ModelData row;
         
         if(res.length > 0) {
-           row = res.fetchAssoc();
+           row = res.fetch().toAssocArray();
         } else {
             throw new Exception("No row with id "~ to!string(i));
         }
@@ -124,10 +132,12 @@ abstract class Model(T)
         T[] ret;
         
         auto db = Database.instance;
-        auto res = db.query("SELECT * FROM `{0}` WHERE `{1}`='{2}'", 
-            tableName, 
-            name,
-            to!string(value));
+        auto res = 
+                db.prepare("SELECT * FROM `?` WHERE `?`='?'")
+                  .bind(tableName) 
+                  .bind(name)
+                  .bind(value)
+                  .execute();
         
         while(res.isValid)
         {
@@ -164,13 +174,25 @@ abstract class Model(T)
         T[] ret;
         
         auto db = Database.instance;
-        auto res = db.query("SELECT * FROM `{0}` WHERE 1 LIMIT {1}", tableName, to!string(i));
+        auto res = 
+                db.prepare("SELECT * FROM `?` LIMIT ?")
+                  .bind(tableName)
+                  .bind(i)
+                  .execute();
         
-        if(res.length > 0) {
-           ret ~= new T(res.fetchAssoc());
-        } else {
-            throw new Exception("No rows in"~ tableName);
+        if(res.length > 0)
+        {
+            while(res.isValid)
+            {
+                ret ~= new T(res.fetch().toAssocArray());
+                res.next();
+            }
         }
+        else
+        {
+            throw new Exception("No rows in "~ tableName);
+        }
+        
         res.free();
         return ret;
     }
@@ -200,12 +222,16 @@ abstract class Model(T)
         T[] ret;
         
         auto db = Database.instance;
-        auto res = db.query("SELECT * FROM `{0}` ORDER BY `id` DESC LIMIT {1}", tableName, to!string(i));
+        auto res = 
+                  db.prepare("SELECT * FROM `?` ORDER BY `id` DESC LIMIT :limit")
+                    .bind(tableName)
+                    .bind(":limit", i)
+                    .execute();
         
         if(res.length > 0) {
-           ret ~= new T(res.fetchAssoc());
+           ret ~= new T(res.fetch().toAssocArray());
         } else {
-            throw new Exception("No rows in"~ tableName);
+            throw new Exception("No rows in "~ tableName);
         }
         res.free();
         return ret;

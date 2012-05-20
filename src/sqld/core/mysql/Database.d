@@ -8,6 +8,7 @@ module sqld.core.mysql.database;
 
 import sqld.base,
        sqld.dsn,
+       sqld.statement,
        sqld.c.mysql,       
        sqld.core.mysql.params,
        sqld.core.mysql.info,
@@ -217,7 +218,7 @@ class MySQL : Database
      * ---
      *
      * ---
-     * auto rows = db.execute("INSERT ...").affectedRows;
+     * auto rows = db.execute("INSERT ...");
      * ---
      *
      * Params:
@@ -229,14 +230,13 @@ class MySQL : Database
      * Returns:
      *   Affected rows
      */
-    public ulong execute(string query, string[] values...)
+    public ulong execute(string query, string file = __FILE__, uint line = __LINE__)
     {
-        string q = format(query, values);
-        uint res = mysql_query(_sql, q.c);
+        uint res = mysql_query(_sql, query.c);
         
         if(res)
         {
-            throw new DatabaseException("Could not execute query: "~q);
+            throw new DatabaseException("Could not execute query: "~query, file, line);
         }
         return mysql_affected_rows(_sql);
     }
@@ -271,29 +271,27 @@ class MySQL : Database
      * Returns:
      *  MySQLResult
      */
-    public MySQLResult query(string query, string[] values...)
+    public MySQLResult query(string query, string file = __FILE__, uint line = __LINE__)
     {
-        MYSQL_RES* result;
+        __gshared MYSQL_RES* result;
         int res;
         
-        string q = format(query, values);
-        res = mysql_query(_sql, q.c);
+        res = mysql_query(_sql, query.c);
         
         if(res)
         {
-            throw new DatabaseException("Could not execute query: "~query);
+            throw new DatabaseException("Could not execute query: "~query, file, line);
         }
         else
         {
             result = mysql_store_result(_sql);
-            
-            if(result is null && mysql_field_count(_sql) > 0)
-            {
-                throw new DatabaseException("Could not store result: "~query);
+            if(result is null && mysql_field_count(_sql) != 0 )
+            {                
+                 throw new DatabaseException("Could not store result: "~query, file, line);
             }
         }
         
-        return new MySQLResult(result, this);
+        return new MySQLResult(result);
     }
     
     /**

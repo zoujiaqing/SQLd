@@ -4,6 +4,8 @@ import sqld.base;
 import std.conv : to;
 import std.array : replace, replaceFirst;
 
+import std.stdio;
+
 /**
  * Represents statement
  */
@@ -11,7 +13,7 @@ class Statement
 {
     alias typeof(this) self;
     
-    protected Database db;
+    protected Database _db;
     protected string   _query;
     protected string[] _bindings;
     protected string[string] _named;
@@ -26,6 +28,7 @@ class Statement
     public this(Database db, string query)
     {
         _query = query;
+        _db = db;
     }
     
     /**
@@ -42,8 +45,10 @@ class Statement
      *  Self
      */
     public self bind(T)(T value)
-    { 
+    {
         _bindings ~= to!string(value);
+        
+        return this;
     }
     
     /**
@@ -63,6 +68,8 @@ class Statement
     public self bind(T)(string name, T value)
     {
         _named[name] = to!string(value);
+        
+        return this;
     }
     
     /**
@@ -74,8 +81,7 @@ class Statement
     public Result execute()
     {
         compile();
-        
-        return db.query(_query);
+        return _db.query(_query);
     }
     
     /**
@@ -90,13 +96,13 @@ class Statement
     {
         foreach(name, value; _named)
         {
-            _query = _query.replace(name, value);
+            _query = _query.replace(name, _db.escape(value));
         }
         _named = _named.init;
         
         foreach(binding; _bindings)
         {
-            _query = _query.replaceFirst("?", binding);
+            _query = _query.replaceFirst("?", _db.escape(binding));
         }
         _bindings = _bindings.init;
     }

@@ -1,7 +1,7 @@
-module sqld.core.mysql.result;
+module sqld.core.sqlite.result;
 
 import sqld.base,
-       sqld.c.mysql,
+       etc.c.sqlite3,
        sqld.core.mysql.database;
        
 import std.conv : to;
@@ -29,14 +29,15 @@ import std.conv : to;
  * }
  * ---
  */
-class MySQLResult : Result
+class SQLiteResult : Result
 {
     alias typeof(this) self;
     
     protected
     {
-        MYSQL_RES* _res;
+        sqlite3_stmt* _res;
         bool _usable;
+        bool _valid;
         
         string[] _fields;
         int _fieldNum;
@@ -46,38 +47,30 @@ class MySQLResult : Result
     }
     
     
+    
     /**
      * Creates new MySQLResult instance
      *
      * Params:  
      *  res = MySQL result
      */
-    this( MYSQL_RES* res)
+    this( sqlite3_stmt* res)
     {
         _res = res;
+        _usable = true;
+        _fieldNum = sqlite3_column_count(_res);
         
-        if(res !is null)
-        {
-            _rows = mysql_num_rows(_res);
-            _fieldNum = mysql_num_fields(_res);
-            
-            if(_fieldNum <= 0)
-            { 
-                throw new DatabaseException("Result set is empty");
-            }
-            
-            loadFields();
-            
-            _usable = true;
-        }
+        while(next()) ++_rows;
+        reset();
+        
+        loadFields();
+        next();
     }
     
     ~this()
     {
         if(_usable)
-        {
-            mysql_free_result(_res);
-        }
+            sqlite3_finalize(_res);
     }
     
     /**
@@ -85,11 +78,9 @@ class MySQLResult : Result
      */
     protected void loadFields()
     {
-        MYSQL_FIELD* field;
-        for (uint i = 0; i < _fieldNum; i++)
+        for ( int i = 0; i < _fieldNum; i++ )
         {
-            field = mysql_fetch_field(_res);
-            _fields ~= to!(string)(field.name);
+            _fields ~= to!(string)(sqlite3_column_name(_res, i));
         }
     }
     
@@ -103,55 +94,38 @@ class MySQLResult : Result
     {
         if(_usable)
         {
-            mysql_free_result(_res);
+            sqlite3_finalize(_res);
             _usable = false;
         }
     }
     
-    
     /**
      * Fetches row
-     *
-     * Returned data is Row class, can be accessed like normal
-     *  or associative array. If error occured, exception is thrown.
      *
      * Examples:
      * ---
      * auto res = db.query("SELECT ...");
      * while(res.isValid)
      * {
-     *     writeln(res.fetchAssoc());
+     *     writeln(res.fetch());
      *     res.next();
      * }
      * ---
      *
      * Throws:
-     *    DatabaseException
+     *  DatabaseException
      *
      * Returns:
-     *  Array with current row data
+     *  Row
      */
     public Row fetch(string file = __FILE__, uint line = __LINE__)
     {
-        MYSQL_ROW crow;
-        string[] row;
-        
-        crow = mysql_fetch_row(_res);
-        
-        if(crow is null)
+        string[] vals;
+        for(int i = 0; i < _fieldNum; i++ )
         {
-            throw new DatabaseException("Could not fetch row.", file, line);
+            vals ~= to!(string)(sqlite3_column_text(_res, i));
         }
-        
-        for(int i; i < _fieldNum; i++ )
-        {
-            row ~= to!string(crow[i]);
-        }
-        
-        // Sync
-        mysql_data_seek(_res, _index);
-        
-        return new Row(row, _fields);
+        return new Row(vals, _fields);
     }
     
     /**
@@ -172,6 +146,7 @@ class MySQLResult : Result
         }
     }
     
+    
     /**
      * Proceedes to next row
      *
@@ -182,13 +157,14 @@ class MySQLResult : Result
      */
     public bool next()
     {
-        if( ++_index >= _rows  )
-        {
-            return false;
-        }
+        int state = sqlite3_step(_res);
+
+        if( state == 100 )
+            _valid = true;
+        else
+            _valid = false;
         
-        mysql_data_seek(_res, _index);
-        return true;
+        return _valid;
     }
     
     
@@ -197,10 +173,11 @@ class MySQLResult : Result
      */
     public void reset()
     {
-        mysql_data_seek(_res, 0);
-        _index = 0;
-    }
-
+        sqlite3_reset(_res);
+        _valid = true;
+    } 
+    
+    
     /**
      * Query result row count
      *
@@ -231,7 +208,7 @@ class MySQLResult : Result
      */
     public bool isValid() @property
     {
-        return (_index < _rows) && _usable;
+        return _valid;
     }
     
     /**
@@ -245,11 +222,10 @@ class MySQLResult : Result
         return _index;
     }
     
-    
     /* Range stuff */
     bool empty()
     {
-        return _index >= _rows;
+        return !_valid;
     }
     Row front() { return fetch(); }
     void popFront() { next(); }
