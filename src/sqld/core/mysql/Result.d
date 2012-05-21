@@ -31,8 +31,6 @@ import std.conv : to;
  */
 class MySQLResult : Result
 {
-    alias typeof(this) self;
-    
     protected
     {
         MYSQL_RES* _res;

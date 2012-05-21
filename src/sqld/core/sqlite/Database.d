@@ -30,9 +30,7 @@ private alias toStringz c;
  * Represents SQLite database connection
  */
 class SQLite : Database
-{
-    alias typeof(this) self;
-    
+{   
     /**
      * Database file
      */
@@ -109,7 +107,7 @@ class SQLite : Database
      * Throws:
      *  DatabaseException if could not connect
      */
-    public override self open()
+    public override Database open()
     {
         int res = sqlite3_open(file.c, &_sql);
         
@@ -133,9 +131,9 @@ class SQLite : Database
      * ---
      *
      * Returns:
-     *  SQLite self
+     *  SQLite Database
      */
-    public override self close()
+    public override Database close()
     {
         sqlite3_close(_sql);
         

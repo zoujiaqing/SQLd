@@ -24,9 +24,7 @@ private alias toStringz c;
  * Represents MySQL database connection
  */
 class MySQL : Database
-{
-    alias typeof(this) self;
-    
+{   
     /**
      * Connection details
      */
@@ -35,7 +33,7 @@ class MySQL : Database
     /**
      * MySQL handle
      */
-    __gshared protected MYSQL* _sql;
+    protected MYSQL* _sql;
     
     
     
@@ -162,7 +160,7 @@ class MySQL : Database
      * Throws:
      *  DatabaseException if could not connect
      */
-    public override self open()
+    public override Database open()
     {
         _sql = mysql_init(null);
         
@@ -184,6 +182,7 @@ class MySQL : Database
             throw new DatabaseException("Could not connect");
         }
         
+        test();
         
         return this;
     }
@@ -200,14 +199,16 @@ class MySQL : Database
      * ---
      *
      * Returns:
-     *  MySQL self
+     *  MySQL Database
      */
-    public override self close()
+    public override Database close()
     {
         mysql_close(_sql);
         
         return this;
     }
+    
+    public void test() {writeln("test"); }
     
     /**
      * Queries database with specified query
@@ -237,6 +238,7 @@ class MySQL : Database
         {
             throw new DatabaseException("Could not execute query: "~query, file, line);
         }
+        
         return mysql_affected_rows(_sql);
     }
     
@@ -337,7 +339,7 @@ class MySQL : Database
      * Returns:
      *  MySQL This
      */
-    public self beginTransaction()
+    public Database beginTransaction()
     {
         execute("BEGIN;");
         return this;
@@ -349,7 +351,7 @@ class MySQL : Database
      * Returns:
      *  MySQL This
      */
-    public self commit()
+    public Database commit()
     {
         execute("COMMIT;");
         return this;
@@ -361,7 +363,7 @@ class MySQL : Database
      * Returns:
      *  MySQL This
      */
-    public self rollback()
+    public Database rollback()
     {
         execute("ROLLBACK;");
         return this;

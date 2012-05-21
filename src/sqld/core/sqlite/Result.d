@@ -30,9 +30,7 @@ import std.conv : to;
  * ---
  */
 class SQLiteResult : Result
-{
-    alias typeof(this) self;
-    
+{   
     protected
     {
         sqlite3_stmt* _res;

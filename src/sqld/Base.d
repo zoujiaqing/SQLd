@@ -24,12 +24,12 @@ abstract class Database
     /**
      * Connects to database
      */
-    abstract typeof(this) open();
+    abstract Database open();
     
     /**
      * Disconnects from database
      */
-    abstract typeof(this) close();
+    abstract Database close();
     
     
     /**
@@ -103,7 +103,7 @@ abstract class Database
     /**
      * Current database instance
      */
-    static __gshared Database instance = null;
+    static Database instance = null;
     
     /**
      * Creates new database instance

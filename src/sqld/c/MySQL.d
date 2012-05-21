@@ -13,9 +13,8 @@ version(Unix)
     pragma(lib, "mysql.so")
 }
 
-
+ 
 import core.stdc.config;
-
 
 extern(C):
 __gshared:
@@ -99,4 +98,4 @@ uint mysql_real_escape_string(MYSQL*, char*, const(char)*, uint);
 void mysql_free_result(MYSQL_RES*);
 
 uint mysql_commit(MYSQL *mysql);
-string mysql_get_host_info(MYSQL*);
+const(char)* mysql_get_host_info(MYSQL*);
