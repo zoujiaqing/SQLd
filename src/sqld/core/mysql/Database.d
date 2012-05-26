@@ -33,8 +33,7 @@ class MySQL : Database
     /**
      * MySQL handle
      */
-    protected MYSQL* _sql;
-    
+    public MYSQL* _sql;
     
     
     /**
@@ -111,7 +110,6 @@ class MySQL : Database
                 throw new Exception("Port variable is not numeric");
             }
         }
-        this();
     }
     
     /**
@@ -182,8 +180,6 @@ class MySQL : Database
             throw new DatabaseException("Could not connect");
         }
         
-        test();
-        
         return this;
     }
     
@@ -208,7 +204,6 @@ class MySQL : Database
         return this;
     }
     
-    public void test() {writeln("test"); }
     
     /**
      * Queries database with specified query

@@ -6,18 +6,17 @@ module sqld.c.mysql;
 
 version(Windows)
 {
-    pragma(lib, "mysql.lib");
+    pragma(lib, "mysql");
 }
 version(Unix)
 {
-    pragma(lib, "mysql.so")
+    pragma(lib, "mysql")
 }
-
  
 import core.stdc.config;
 
+__gshared: 
 extern(C):
-__gshared:
 
 struct MYSQL;
 struct MYSQL_RES;
@@ -27,7 +26,7 @@ alias char* cstring;
 alias const(const(char)*)* MYSQL_ROW;
 
 
-struct MYSQL_FIELD {
+struct MYSQL_FIELD { 
       const(char)* name;                 /* Name of column */
       const(char)* org_name;             /* Original column name, if an alias */ 
       const(char)* table;                /* Table of column if column was a field */
@@ -48,8 +47,9 @@ struct MYSQL_FIELD {
       uint decimals;                  /* Number of decimals in field */
       uint charsetnr;                 /* Character set */
       uint type;                     /* Type of field. See mysql_com.h for types */
+      
       // type is actually an enum btw
-      void* extension;
+      void* extension; 
 }
 
 char mysql_autocommit(MYSQL*, char);
@@ -60,7 +60,7 @@ MYSQL* mysql_init(MYSQL*);
 uint mysql_errno(MYSQL*);
 const(char)* mysql_error(MYSQL*);
 
-MYSQL* mysql_real_connect(MYSQL*, const(char)*, const(char)*, const(char)*, const(char)*, uint, const(char)*, c_ulong);
+MYSQL* mysql_real_connect(MYSQL*, const(char)*, const(char)*, const(char)*, const(char)*, uint, const(char)*, size_t);
 
 int mysql_query(MYSQL*, const(char)*);
 int mysql_real_query(MYSQL*, const(char)*, uint);
@@ -72,8 +72,8 @@ uint mysql_num_rows(MYSQL_RES*);
 uint mysql_num_fields(MYSQL_RES*);
 bool mysql_eof(MYSQL_RES*);
 
-ulong mysql_affected_rows(MYSQL*);
-ulong mysql_insert_id(MYSQL*);
+size_t mysql_affected_rows(MYSQL*);
+size_t mysql_insert_id(MYSQL*);
 
 MYSQL_RES* mysql_store_result(MYSQL*);
 MYSQL_RES* mysql_use_result(MYSQL*);
@@ -88,11 +88,11 @@ uint mysql_get_server_version(MYSQL*);
 uint mysql_get_client_version(MYSQL*);
 const(char)* mysql_get_server_info(MYSQL*);
 
-void mysql_data_seek(MYSQL_RES*, ulong);
+void mysql_data_seek(MYSQL_RES*, size_t);
 
 const(char)* mysql_get_ssl_cipher(MYSQL*);
 
-uint mysql_escape_string(char*, const(char)*, ulong);
+uint mysql_escape_string(char*, const(char)*, size_t);
 uint mysql_real_escape_string(MYSQL*, char*, const(char)*, uint);
 
 void mysql_free_result(MYSQL_RES*);

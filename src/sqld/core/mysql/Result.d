@@ -147,7 +147,7 @@ class MySQLResult : Result
         }
         
         // Sync
-        mysql_data_seek(_res, _index);
+        mysql_data_seek(_res, cast(uint)_index);
         
         return new Row(row, _fields);
     }
@@ -185,7 +185,7 @@ class MySQLResult : Result
             return false;
         }
         
-        mysql_data_seek(_res, _index);
+        mysql_data_seek(_res, cast(uint)_index);
         return true;
     }
     

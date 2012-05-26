@@ -24,12 +24,12 @@ abstract class Database
     /**
      * Connects to database
      */
-    abstract Database open();
+    Database open();
     
     /**
      * Disconnects from database
      */
-    abstract Database close();
+    Database close();
     
     
     /**
