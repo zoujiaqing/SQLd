@@ -6,21 +6,21 @@ module sqld.c.mysql;
 
 version(Windows)
 {
-    pragma(lib, "mysql");
+    pragma(lib, "libmysql");
 }
 version(Unix)
 {
     pragma(lib, "mysql")
 }
- 
-import core.stdc.config;
 
-__gshared: 
-extern(C):
 
-struct MYSQL;
-struct MYSQL_RES;
-struct MYSQL_STMT;
+//import core.stdc.config;
+
+__gshared:
+extern(System):
+struct MYSQL {};
+struct MYSQL_RES {};
+struct MYSQL_STMT {};
 
 alias char* cstring;
 alias const(const(char)*)* MYSQL_ROW;
@@ -88,7 +88,7 @@ uint mysql_get_server_version(MYSQL*);
 uint mysql_get_client_version(MYSQL*);
 const(char)* mysql_get_server_info(MYSQL*);
 
-void mysql_data_seek(MYSQL_RES*, size_t);
+void mysql_data_seek(MYSQL_RES*, ulong);
 
 const(char)* mysql_get_ssl_cipher(MYSQL*);
 

@@ -90,6 +90,11 @@ abstract class Database
     public ulong execute(string query, string file = __FILE__, uint line = __LINE__);
     
     /**
+     * Returns last inserted row id
+     */
+    abstract public ulong insertedId() @property; 
+    
+    /**
      * Escapes string
      *
      * Params:
@@ -103,7 +108,7 @@ abstract class Database
     /**
      * Current database instance
      */
-    static Database instance = null;
+    __gshared Database instance = null;
     
     /**
      * Creates new database instance
@@ -180,6 +185,7 @@ class DatabaseError
      * Error message
      */
     public string message;
+    alias message msg;
     
     /**
      * Error number

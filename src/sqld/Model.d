@@ -1,3 +1,6 @@
+/**
+ * Used to test stuff, don't use it now
+ */
 module sqld.model;
 
 import sqld.base;
@@ -54,6 +57,11 @@ abstract class Model(T)
     {
         _data[n] = to!string(val);
     }
+    
+    public override string toString()
+    {
+        return to!string(_data);
+    }
         
     /**
      * Saves changes done to model
@@ -62,25 +70,36 @@ abstract class Model(T)
     {
         string[] sets;
         
+        writeln(_fields, _data);
+        
         foreach(field; _fields)
         {
-            sets ~= "`"~field~"`='"~_data[field]~"'";
+            if(field in _data) {
+                sets ~= "`"~field~"`='"~_data[field]~"'";
+            } else {
+                throw new Exception("Field '"~field~"' has been defined, but it's not set");
+            }
         }
-        
-        _db.prepare("UPDATE `?` SET `?` WHERE `id`=?") 
+        _db.prepare("UPDATE `:table` SET :sets WHERE `id`=:data") 
+           .bind(":table", tableName)
+           .bind(":sets", sets.join(", "), false)
+           .bind(":data", _data["id"])
+           .execute();
+    }
+    
+    /**
+     * Removes current row
+     */
+    void remove()
+    {
+        _db.prepare("DELETE FROM `?` WHERE `id`=?") 
            .bind(tableName)
-           .bind(sets.join(", "))
            .bind(_data["id"])
            .execute();
     }
     
-    void remove()
-    {
-        
-    }
-    
     /**
-     * Sets row that should be updated    
+     * Sets row that should be updated
      */
     protected void __fields(string[] fields) @property
     {
@@ -88,6 +107,25 @@ abstract class Model(T)
     } 
     
     //-------------- STATIC
+    
+    public static T create(ModelData data)
+    {
+        string[] vals;
+        
+        foreach(val; data.values)
+        {
+            vals ~= "'"~val~"'";
+        }
+        
+        Database.instance
+           .prepare("INSERT INTO `?` VALUES(:vals)")
+           .bind(tableName)
+           .bind(":vals", vals.join(", "), false)
+           .execute();
+            
+        return T.findById(Database.instance.insertedId);
+    }
+    
     /**
      * Finds row with specified ID
      *
@@ -97,7 +135,7 @@ abstract class Model(T)
      * Returns:
      *  Model with row data
      */
-    public static T findId(int i)
+    public static T findById(ulong i)
     {
         auto db = Database.instance;
         auto res = db.prepare("SELECT * FROM `?` WHERE `id`='?'")
@@ -107,10 +145,8 @@ abstract class Model(T)
                      
         ModelData row;
         
-        if(res.length > 0) {
+        if(res.isValid) {
            row = res.fetch().toAssocArray();
-        } else {
-            throw new Exception("No row with id "~ to!string(i));
         }
         res.free();
         
@@ -174,23 +210,16 @@ abstract class Model(T)
         T[] ret;
         
         auto db = Database.instance;
-        auto res = 
-                db.prepare("SELECT * FROM `?` LIMIT ?")
+        
+        auto res = db.prepare("SELECT * FROM `?` LIMIT ?")
                   .bind(tableName)
                   .bind(i)
                   .execute();
         
-        if(res.length > 0)
+        while(res.isValid)
         {
-            while(res.isValid)
-            {
-                ret ~= new T(res.fetch().toAssocArray());
-                res.next();
-            }
-        }
-        else
-        {
-            throw new Exception("No rows in "~ tableName);
+            ret ~= new T(res.fetch().toAssocArray());
+            res.next();
         }
         
         res.free();
@@ -228,14 +257,42 @@ abstract class Model(T)
                     .bind(":limit", i)
                     .execute();
         
-        if(res.length > 0) {
-           ret ~= new T(res.fetch().toAssocArray());
-        } else {
-            throw new Exception("No rows in "~ tableName);
+        
+        while(res.isValid)
+        {
+            ret ~= new T(res.fetch().toAssocArray());
+            res.next();
         }
         res.free();
         return ret;
     }
+    
+    /** 
+     * Returns all rows
+     *
+     * Returns:
+     *  Models
+     */
+    public static T[] all()
+    {
+        T[] ret;
+        
+        auto db = Database.instance;
+        auto res = 
+                  db.prepare("SELECT * FROM `?`")
+                    .bind(tableName)
+                    .execute();
+        
+        while(res.isValid)
+        {
+            ret ~= new T(res.fetch().toAssocArray());
+            res.next();
+        }
+        
+        res.free();
+        return ret;
+    }
+    
     
     static string tableName() @property
     {

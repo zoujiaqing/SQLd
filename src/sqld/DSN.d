@@ -37,6 +37,18 @@ struct Dsn
     }
     
     /**
+     * Creates new Dsn instance
+     *
+     * Params:
+     *  p = Associative array with connection details
+     */
+    public this(string[string] p)
+    {   
+        params = p;
+    }
+    
+    
+    /**
      * Parses DSN
      *
      * Params:

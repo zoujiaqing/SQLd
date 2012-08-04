@@ -9,8 +9,7 @@ module sqld.core.mysql.database;
 import sqld.base,
        sqld.dsn,
        sqld.statement,
-       sqld.c.mysql,       
-       sqld.core.mysql.params,
+       sqld.c.mysql, 
        sqld.core.mysql.info,
        sqld.core.mysql.result;
        
@@ -28,12 +27,17 @@ class MySQL : Database
     /**
      * Connection details
      */
-    public MySQLParams params;
+    protected string _user;
+    protected string _pass;
+    protected string _host;
+    protected string _db;
+    protected int    _port;
+    
     
     /**
      * MySQL handle
      */
-    public MYSQL* _sql;
+    protected MYSQL* _sql;
     
     
     /**
@@ -51,11 +55,11 @@ class MySQL : Database
      */
     public this(string address, string user = "root", string password = "", string db = null, int port = 3306)
     {
-        this.params.host = address;
-        this.params.user = user;
-        this.params.pass = password;
-        this.params.db   = db;
-        this.params.port = port;
+        _host = address;
+        _user = user;
+        _pass = password;
+        _db   = db;
+        _port = port;
         this();
     }
     
@@ -65,10 +69,9 @@ class MySQL : Database
      * Params:
      *  params = Connection params
      */
-    public this(MySQLParams params)
+    public this(string[string] params)
     {
-        this.params = params;
-        this();
+        this(Dsn(params));
     }
     
     /**
@@ -88,28 +91,34 @@ class MySQL : Database
      */
     public this(Dsn dsn)
     {
-        params.host = dsn["host"];
+        if("host" !in dsn)
+            _host = "localhost";
+        else    
+            _host = dsn["host"];
         
         if("user" in dsn) {
-            params.user = dsn["user"];
+            _user = dsn["user"];
+        } else {
+            _user = "root";
         }
         
         if("pass" in dsn) {
-            params.pass = dsn["pass"];
+            _pass = dsn["pass"];
         }
         
         if("db" in dsn) {
-            params.db = dsn["db"];
+            _db = dsn["db"];
         }
         
         if("port" in dsn) {
             try {
-                params.port = to!uint(dsn["port"]); 
+                _port = to!uint(dsn["port"]); 
             } catch(Throwable e)
             {
                 throw new Exception("Port variable is not numeric");
             }
         }
+        this();
     }
     
     /**
@@ -133,6 +142,7 @@ class MySQL : Database
     
     protected this()
     {
+        Database.instance = this;
     }
     
     public ~this()
@@ -168,18 +178,18 @@ class MySQL : Database
         }
         
         _sql = mysql_real_connect(_sql,
-                params.host.c,
-                params.user.c,
-                params.pass.c,
-                params.db.c,
-                params.port,
+                _host.c,
+                _user.c,
+                _pass.c,
+                _db.c,
+                _port,
                 null, 0);
         
         if(_sql == null)
         {
             throw new DatabaseException("Could not connect");
         }
-        
+        execute("SET NAMES `utf8`");
         return this;
     }
     
@@ -210,10 +220,6 @@ class MySQL : Database
      *
      * Examples:
      * ---
-     * db.execute("INSERT ...").execute("UPDATE ..."); // No result set is returned
-     * ---
-     *
-     * ---
      * auto rows = db.execute("INSERT ...");
      * ---
      *
@@ -231,7 +237,7 @@ class MySQL : Database
         uint res = mysql_query(_sql, query.c);
         if(res)
         {
-            throw new DatabaseException("Could not execute query: "~query, file, line);
+            throw new DatabaseException("Could not execute query '"~query~"': " ~ this.error.msg, file, line);
         }
         
         return mysql_affected_rows(_sql);
@@ -276,7 +282,7 @@ class MySQL : Database
         
         if(res)
         {
-            throw new DatabaseException("Could not execute query: "~query, file, line);
+            throw new DatabaseException("Could not execute query '"~query~"': " ~ this.error.msg, file, line);
         }
         else
         {
@@ -422,6 +428,14 @@ class MySQL : Database
     public MYSQL* handle() @property
     {
         return _sql;
+    }
+    
+    /**
+     * Returns last inserted row id
+     */
+    public override ulong insertedId() @property
+    {
+        return mysql_insert_id(_sql);
     }
     
     /**

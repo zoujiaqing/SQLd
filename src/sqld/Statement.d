@@ -15,8 +15,8 @@ class Statement
     
     protected Database _db;
     protected string   _query;
-    protected string[] _bindings;
-    protected string[string] _named;
+    /*protected string[] _bindings;
+    protected string[string] _named;*/
     
     /**
      * Creates new statement
@@ -44,9 +44,11 @@ class Statement
      * Returns:
      *  Self
      */
-    public self bind(T)(T value)
+    public self bind(T)(T _value, bool escape = true)
     {
-        _bindings ~= to!string(value);
+        string value = to!string(_value);
+        _query = _query.replaceFirst("?", escape ? _db.escape(value) : value);
+        
         
         return this;
     }
@@ -65,9 +67,10 @@ class Statement
      * Returns:
      *  Self
      */
-    public self bind(T)(string name, T value)
+    public self bind(T)(string name, T _value, bool escape = true)
     {
-        _named[name] = to!string(value);
+        string value = to!string(_value);
+        _query = _query.replace(name, escape ? _db.escape(value) : value);
         
         return this;
     }
@@ -80,30 +83,6 @@ class Statement
      */
     public Result execute()
     {
-        compile();
         return _db.query(_query);
-    }
-    
-    /**
-     * Compiles statement
-     * 
-     * All bindings are placed into query, registered bindings are removed after compilation.
-     *
-     * Returns:
-     *  Self
-     */
-    protected void compile()
-    {
-        foreach(name, value; _named)
-        {
-            _query = _query.replace(name, _db.escape(value));
-        }
-        _named = _named.init;
-        
-        foreach(binding; _bindings)
-        {
-            _query = _query.replaceFirst("?", _db.escape(binding));
-        }
-        _bindings = _bindings.init;
     }
 }

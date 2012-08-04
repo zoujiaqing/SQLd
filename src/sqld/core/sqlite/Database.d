@@ -296,4 +296,9 @@ class SQLite : Database
     {
         return _sql;
     }
+    
+    public override ulong insertedId() @property
+    {
+        return sqlite3_last_insert_rowid(_sql);
+    }
 }
