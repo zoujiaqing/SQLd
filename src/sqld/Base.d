@@ -12,8 +12,9 @@ import std.algorithm : countUntil;
 
 import sqld.dsn,
        sqld.statement,       
-       sqld.core.mysql.database,
-       sqld.core.sqlite.database;
+       sqld.db.mysql.database,
+       sqld.db.sqlite.database,
+       sqld.db.postgre.database;
 
  
 /**
@@ -24,12 +25,12 @@ abstract class Database
     /**
      * Connects to database
      */
-    Database open();
+    abstract Database open();
     
     /**
      * Disconnects from database
      */
-    Database close();
+    abstract Database close();
     
     
     /**
@@ -87,7 +88,7 @@ abstract class Database
      * Returns:
      *   Affected rows
      */
-    public ulong execute(string query, string file = __FILE__, uint line = __LINE__);
+    abstract public ulong execute(string query, string file = __FILE__, uint line = __LINE__);
     
     /**
      * Returns last inserted row id
@@ -103,12 +104,12 @@ abstract class Database
      * Returns:
      *  Escaped string
      */
-    public string escape(string str);
+    abstract public string escape(string str);
 
     /**
      * Current database instance
      */
-    __gshared Database instance = null;
+    static Database instance = null;
     
     /**
      * Creates new database instance
@@ -131,6 +132,10 @@ abstract class Database
             
             case "sqlite":
                 Database.instance = new SQLite(dsn);
+            break;
+            
+            case "postgre":
+                Database.instance = new Postgre(dsn);
             break;
             
             default:
@@ -185,12 +190,17 @@ class DatabaseError
      * Error message
      */
     public string message;
+    
+    /// ditto
     alias message msg;
     
     /**
      * Error number
      */
     public int number;
+    
+    /// ditto
+    alias number code;
     
     /**
      * Source code file name in which error occured

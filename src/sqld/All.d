@@ -1,11 +1,13 @@
 module sqld.all;
 
 public import sqld.base,
-     sqld.core.mysql.database,
-     sqld.core.mysql.info,
-     sqld.core.mysql.result,
+     sqld.db.mysql.database,
+     sqld.db.mysql.info,
+     sqld.db.mysql.result,
      
-     sqld.core.sqlite.database,
-     sqld.core.sqlite.result,
+     sqld.db.sqlite.database,
+     sqld.db.sqlite.result,
+     
+     sqld.db.postgre.database,
      
      sqld.model; 
