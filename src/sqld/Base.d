@@ -6,9 +6,10 @@
  */
 module sqld.base;
 
-import std.array     : replace;
-import std.conv      : to;
+import std.array     : replace, join;
+import std.conv      : to, ConvException;
 import std.algorithm : countUntil;
+import std.traits;
 
 import sqld.dsn,
        sqld.statement,       
@@ -269,12 +270,7 @@ class Row
     /**
      * Row data
      */
-    protected string[] _data;
-    
-    /**
-     * Field names
-     */
-    protected string[] _fields;
+    protected string[string] _data;
     
     
     /**
@@ -285,8 +281,10 @@ class Row
      */
     this(string[] data, string[] fields)
     {
-        _data = data;
-        _fields = fields;
+        for(int i; i < fields.length; i++)
+        {
+            _data[fields[i]] = data[i];
+        }
     }
     
     /**
@@ -300,14 +298,12 @@ class Row
      */
     public string opIndex(string name)
     {
-        uint i = _fields.countUntil(name);
-        
-        if(i == -1)
+        if(name !in _data)
         {
             throw new Exception("Index does not exists");
         }
         
-        return _data[i];
+        return _data[name];
     }
     
     /**
@@ -321,7 +317,7 @@ class Row
      */
     public string opIndex(uint i)
     {
-        return _data[i];
+        return _data.values[i];
     }
     
     /**
@@ -332,16 +328,16 @@ class Row
      */
     public string[] fields() @property
     {
-        return _fields;
+        return _data.keys;
     }
     
     public int opApply( int delegate(string name, string value) dg )
     {
         int result;
         
-        for(int i; i < _fields.length; i++)
+        foreach(field, value; _data)
         {
-            result = dg(_fields[i], _data[i]);
+            result = dg(field, value);
             
             if(result) break;
         }
@@ -354,12 +350,7 @@ class Row
      */
     public string[string] toAssocArray()
     {
-        string[string] ret;
-        
-        foreach(i, field; _fields)
-            ret[field] = _data[i];
-        
-        return ret;
+        return _data;
     }
     
     /**
@@ -367,7 +358,7 @@ class Row
      */
     public string[] toArray()
     {
-        return _data;
+        return _data.values;
     }
     
     /**
@@ -378,6 +369,32 @@ class Row
      */
     public override string toString()
     {
-        return to!string(toAssocArray());
+        return to!string(_data);
+    }
+    
+    /**
+     * Returns row as specified struct
+     *
+     * If one of the fields cannot be casted to member type exception is thrown.
+     *
+     * Authors:
+     *  dav1d
+     *
+     * Throws:
+     *  Exception
+     */
+    T as(T)()
+    {
+        T result;   
+        
+        foreach(name; __traits(allMembers, T)) {
+            try {
+                mixin(`result.` ~ name ~` = to!(typeof(result.`~name~`))(_data["` ~ name ~ `"]);`);
+            } catch(ConvException e) {
+                throw new Exception("Cannot cast field '"~name~"' to " ~ mixin("typeof(result."~name~").stringof"));
+            }
+        }
+        
+        return result;
     }
 }

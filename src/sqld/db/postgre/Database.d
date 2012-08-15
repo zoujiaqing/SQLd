@@ -237,6 +237,9 @@ class Postgre : Database
      *
      * If no error occured, returns empty error struct
      *
+     * Todo:
+     *  Support error codes 
+     *
      * Returns:
      *  DatabaseError Last error
      */
