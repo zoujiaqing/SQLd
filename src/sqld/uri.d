@@ -408,13 +408,13 @@ class Uri
     {
         _scheme = Scheme.Unknown;
         _port = 0;
-        _domain = null;
-        _path = null;
-        _rawquery = null;
+        _domain = _domain.init;
+        _path = _path.init;
+        _rawquery = _rawquery.init;
         _query = UriQuery();
-        _user = null;
-        _password = null;
-        _fragment = null;
+        _user = _user.init;
+        _password = _password.init;
+        _fragment = _fragment.init;
     }
     
     /**

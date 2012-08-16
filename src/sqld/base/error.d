@@ -94,3 +94,9 @@ class DatabaseError
         return formatted;
     }
 }
+
+class UnsupportedFeatureException : Exception {
+    this(string s, string f = __FILE__, uint l = __LINE__) {
+        super(s,f,l);
+    }
+}

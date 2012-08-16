@@ -8,6 +8,7 @@ module sqld.db.mysql.database;
 
 import sqld.base.database,
        sqld.base.error,
+       sqld.base.transaction,
        sqld.uri,
        sqld.statement,
        sqld.c.mysql, 
@@ -290,7 +291,6 @@ class MySQL : Database
      *
      * Params:
      *  query = Query to execute
-     *  values = Values to bind
      *
      * Throws:
      *  DatabaseException
@@ -300,7 +300,7 @@ class MySQL : Database
      */
     public override MySQLResult query(string query, string file = __FILE__, uint line = __LINE__)
     {
-        __gshared MYSQL_RES* result;
+        MYSQL_RES* result;
         int res;
         
         res = mysql_query(_sql, query.c);
@@ -363,37 +363,16 @@ class MySQL : Database
      * Begins transaction
      *
      * Returns:
-     *  MySQL This
+     *  Transaction
      */
-    public Database beginTransaction()
+    public override Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadCommited)
     {
+        Transaction t = new Transaction(this);
         execute("BEGIN;");
-        return this;
+        execute("SET TRANSACTION ISOLATION LEVEL "~to!string(level));
+        return t;
     } 
     
-    /**
-     * Commits transaction changes
-     *
-     * Returns:
-     *  MySQL This
-     */
-    public Database commit()
-    {
-        execute("COMMIT;");
-        return this;
-    }
-    
-    /**
-     * Rollbacks transaction changes
-     *
-     * Returns:
-     *  MySQL This
-     */
-    public Database rollback()
-    {
-        execute("ROLLBACK;");
-        return this;
-    }
     
     /**
      * Checks if connection is estabilished

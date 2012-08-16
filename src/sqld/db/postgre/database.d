@@ -3,6 +3,7 @@ module sqld.db.postgre.database;
 import sqld.base.database,
        sqld.base.error,
        sqld.base.result,
+       sqld.base.transaction,
        sqld.uri,
        sqld.statement,
        sqld.c.postgre,
@@ -74,6 +75,13 @@ class Postgre : Database
         
         if(uri.port != 0) {
             _params["port"] = to!string(uri.port);
+        }
+        
+        auto params = uri.query;
+        
+        for(int i; i < params.length; i++) {
+            auto param = params[i];
+            _params[param.name] = param.value;
         }
     }
     
@@ -217,7 +225,7 @@ class Postgre : Database
     }
     
     /**
-     * Returns last inserted row id
+     * Returns: last inserted row id
      */
     public override ulong insertedId() @property
     {
@@ -243,36 +251,14 @@ class Postgre : Database
      * Begins transaction
      *
      * Returns:
-     *  Postgre This
+     *  Transaction
      */
-    public Database beginTransaction()
+    public override Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadCommited)
     {
+        Transaction t = new Transaction(this);
         execute("BEGIN;");
-        return this;
-    } 
-    
-    /**
-     * Commits transaction changes
-     *
-     * Returns:
-     *  Postgre This
-     */
-    public Database commit()
-    {
-        execute("COMMIT;");
-        return this;
-    }
-    
-    /**
-     * Rollbacks transaction changes
-     *
-     * Returns:
-     *  Postgre This
-     */
-    public Database rollback()
-    {
-        execute("ROLLBACK;");
-        return this;
+        execute("SET TRANSACTION "~to!string(level));
+        return t;
     }
     
     /**

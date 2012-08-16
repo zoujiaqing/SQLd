@@ -8,6 +8,7 @@ module sqld.db.sqlite.database;
 
 import sqld.base.database,
        sqld.base.error,
+       sqld.base.transaction,
        sqld.uri,
        sqld.statement,
        etc.c.sqlite3,
@@ -146,10 +147,6 @@ class SQLite : Database
      *
      * Examples:
      * ---
-     * db.execute("INSERT ...").execute("UPDATE ..."); // No result set is returned
-     * ---
-     *
-     * ---
      * auto rows = db.execute("INSERT ...");
      * ---
      *
@@ -201,14 +198,14 @@ class SQLite : Database
      *  DatabaseException
      *
      * Returns:
-     *  MySQLResult
+     *  SQLiteResult
      */
     public override SQLiteResult query(string query, string file = __FILE__, uint line = __LINE__)
     {
         sqlite3_stmt* stmt;
         int res;
         
-        res = sqlite3_prepare_v2(_sql, query.c, query.length, &stmt, null);
+        res = sqlite3_prepare_v2(_sql, query.c, cast(int)query.length, &stmt, null);
         
         if ( res != SQLITE_OK )
         {
@@ -246,6 +243,29 @@ class SQLite : Database
     public override Statement prepare(string query)
     {
         return new Statement(this, query);
+    }
+    
+    /**
+     * Begins transaction
+     *
+     * Returns:
+     *  Transaction
+     */
+    public override Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadUncommited)
+    {
+        Transaction t = new Transaction(this);
+        execute("BEGIN;");
+        sqlite3_enable_shared_cache(1);
+        
+        if(level == TransactionIsolation.ReadUncommited) {
+            execute("PRAGMA read_uncommited = true");
+        } else if(level == TransactionIsolation.Serializable) {
+            execute("PRAGMA read_uncommited = false");
+        } else {
+            throw new UnsupportedFeatureException("SQLite does not support requested isolation level");
+        }
+        
+        return t;
     }
     
     
@@ -298,6 +318,9 @@ class SQLite : Database
         return _sql;
     }
     
+    /**
+     * Returns: last inserted row id
+     */
     public override ulong insertedId() @property
     {
         return sqlite3_last_insert_rowid(_sql);

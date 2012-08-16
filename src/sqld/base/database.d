@@ -2,6 +2,7 @@ module sqld.base.database;
 
 import sqld.base.error,
        sqld.base.result,
+       sqld.base.transaction,
        sqld.uri,
        sqld.statement,
        sqld.db.mysql.database,
@@ -66,6 +67,15 @@ abstract class Database
      *  New statement
      */
     abstract Statement prepare(string query);
+    
+    /**
+     * Begins transaction
+     *
+     * Returns:
+     *  Transaction
+     */
+    abstract public Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadCommited);
+    
     
     /**
      * Queries database with specified query
