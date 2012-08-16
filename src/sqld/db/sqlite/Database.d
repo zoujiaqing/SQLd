@@ -6,8 +6,9 @@
  */
 module sqld.db.sqlite.database;
 
-import sqld.base,
-       sqld.dsn,
+import sqld.base.database,
+       sqld.base.error,
+       sqld.uri,
        sqld.statement,
        etc.c.sqlite3,
        sqld.db.sqlite.result;
@@ -63,19 +64,19 @@ class SQLite : Database
      * 
      * Examples:
      * ---
-     * auto dsn = Dsn("sqlite:host=db.sqlite");
-     * auto db = new SQLite(dsn);
+     * auto uri = Uri("sqlite:///db.sqlite");
+     * auto db = new SQLite(uri);
      * db.open();
      * // ...
      * db.close();
      * ---
      * 
      * Params:
-     *   dsn = DataSourceName
+     *   uri = Uri
      */
-    public this(Dsn dsn)
+    public this(Uri uri)
     {
-        this.file = dsn["file"];
+        this.file = uri.path[1..$];
         
         this();
     }

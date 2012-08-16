@@ -1,6 +1,7 @@
 module sqld.statement;
 
-import sqld.base;
+import sqld.base.database,
+       sqld.base.result;
 import std.conv : to;
 import std.array : replace, replaceFirst;
 

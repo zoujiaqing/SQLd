@@ -1,6 +1,9 @@
 module sqld.db.mysql.result;
 
-import sqld.base,
+import sqld.base.database,
+       sqld.base.result,
+       sqld.base.error,
+       sqld.base.row,
        sqld.c.mysql,
        sqld.db.mysql.database;
        

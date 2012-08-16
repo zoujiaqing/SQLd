@@ -1,6 +1,8 @@
 module sqld.db.sqlite.result;
 
-import sqld.base,
+import sqld.base.database,
+       sqld.base.result,
+       sqld.base.row,
        etc.c.sqlite3,
        sqld.db.mysql.database;
        

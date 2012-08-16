@@ -6,8 +6,9 @@
  */
 module sqld.db.mysql.database;
 
-import sqld.base,
-       sqld.dsn,
+import sqld.base.database,
+       sqld.base.error,
+       sqld.uri,
        sqld.statement,
        sqld.c.mysql, 
        sqld.db.mysql.info,
@@ -71,7 +72,35 @@ class MySQL : Database
      */
     public this(string[string] params)
     {
-        this(Dsn(params));
+        if("host" !in params) {
+            throw new DatabaseException("No 'host' parameter specified");
+        } else {
+            _host = params["host"];
+        }
+        
+        if("user" !in params) {
+            _user = "root";
+        } else {
+            _user = params["user"];
+        }
+        
+        if("pass" !in params) {
+            _pass = "";
+        } else {
+            _pass = params["pass"];
+        }
+        
+        if("db" !in params) {
+            _db = "";
+        } else {
+            _db = params["db"];
+        }
+        
+        if("port" !in params) {
+            _port = 3306;
+        } else {
+            _port = to!uint(params["port"]);
+        }
     }
     
     /**
@@ -79,45 +108,40 @@ class MySQL : Database
      * 
      * Examples:
      * ---
-     * auto dsn = Dsn("mysql:host=localhost;user=root;pass=...");
-     * auto db = new MySQL(dsn);
+     * auto uri = Uri("mysql://user:pass@localhost/");
+     * auto db = new MySQL(uri);
      * db.open();
      * // ...
      * db.close();
      * ---
      * 
      * Params:
-     *   dsn = DataSourceName
+     *   uri = Uri
      */
-    public this(Dsn dsn)
+    public this(Uri uri)
     {
-        if("host" !in dsn)
-            _host = "localhost";
-        else    
-            _host = dsn["host"];
+        _host = uri.host;
         
-        if("user" in dsn) {
-            _user = dsn["user"];
+        if(uri.user != "") {
+            _user = uri.user;
         } else {
             _user = "root";
         }
         
-        if("pass" in dsn) {
-            _pass = dsn["pass"];
+        if(uri.password != "") {
+            _pass = uri.password;
+        } else {
+            _pass = "";
         }
         
-        if("db" in dsn) {
-            _db = dsn["db"];
+        if(uri.path.length > 1) {
+            _db = uri.path[1..$];
         }
         
-        if("port" in dsn) {
-            try {
-                _port = to!uint(dsn["port"]); 
-            } catch(Throwable e)
-            {
-                throw new Exception("Port variable is not numeric");
-            }
+        if(uri.port != 0) {
+            _port = uri.port;
         }
+        
         this();
     }
     
@@ -126,18 +150,19 @@ class MySQL : Database
      *
      * Examples:
      * ---
-     * auto db = new MySQL("mysql:host=localhost;user=root;pass=...");
+     * auto uri = Uri("mysql://user:pass@localhost/");
+     * auto db = new MySQL(uri);
      * db.open();
      * // ...
      * db.close();
      * ---
      * 
      * Params:
-     *   dsn = DataSourceName
+     *   uri = DataSourceName
      */
-    public this(string dsn)
+    public this(string uri)
     {
-        this(Dsn(dsn));
+        this(new Uri(uri));
     }
     
     protected this()
@@ -156,7 +181,7 @@ class MySQL : Database
      *
      * Examples:
      * ---
-     * auto db = new MySQL("mysql:host=localhost;user=root;pass=...");
+     * auto db = new MySQL("mysql://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();

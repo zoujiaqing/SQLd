@@ -1,6 +1,9 @@
 module sqld.db.postgre.database;
 
-import sqld.base,
+import sqld.base.database,
+       sqld.base.error,
+       sqld.base.result,
+       sqld.uri,
        sqld.statement,
        sqld.c.postgre,
        sqld.db.postgre.result;
@@ -34,13 +37,53 @@ class Postgre : Database
         _aliases = ["pass": "password", "db": "dbname"];
     }
     
+    /**
+     * Creates new Database instance
+     * 
+     * Examples:
+     * ---
+     * auto uri = Uri("postgre://user:pass@localhost/");
+     * auto db = new Postgre(uri);
+     * db.open();
+     * // ...
+     * db.close();
+     * ---
+     * 
+     * Params:
+     *   uri = Uri
+     */
+    public this(Uri uri)
+    {
+        _params["host"] = uri.host;
+        
+        if(uri.user != "") {
+            _params["user"] = uri.user;
+        } else {
+            _params["user"] = "root";
+        }
+        
+        if(uri.password != "") {
+            _params["pass"] = uri.password;
+        } else {
+            _params["pass"] = "";
+        }
+        
+        if(uri.path.length > 1) {
+            _params["db"] = uri.path[1..$];
+        }
+        
+        if(uri.port != 0) {
+            _params["port"] = to!string(uri.port);
+        }
+    }
+    
     
     /**
      * Connects to database
      *
      * Examples:
      * ---
-     * auto db = new Postgre("mysql:host=localhost;user=root;pass=...");
+     * auto db = new Postgre("postgre://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();
@@ -68,7 +111,7 @@ class Postgre : Database
      *
      * Examples:
      * ---
-     * auto db = new Postgre("mysql:host=localhost;user=root;pass=...");
+     * auto db = new Postgre("postgre://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();

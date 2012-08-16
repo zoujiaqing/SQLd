@@ -3,7 +3,7 @@
  */
 module sqld.model;
 
-import sqld.base;
+import sqld.base.database;
 import std.stdio;
 import std.array : split, join;
 import std.conv : to;

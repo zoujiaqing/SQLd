@@ -1,6 +1,8 @@
 module sqld.db.postgre.result;
 
-import sqld.base,
+import sqld.base.database,
+       sqld.base.result,
+       sqld.base.row,
        sqld.c.postgre,
        sqld.db.postgre.database;
        
