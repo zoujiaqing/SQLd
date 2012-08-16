@@ -3,6 +3,8 @@ module sqld.base.transaction;
 import sqld.base.database,
        sqld.base.result;
 
+import std.algorithm;
+
 /**
  * Represents transaction
  */
@@ -21,6 +23,11 @@ class Transaction
     this(Database db)
     {
         _db = db;
+    }
+    
+    ~this()
+    {
+        releaseAll();
     }
     
     /**
@@ -89,6 +96,7 @@ class Transaction
      */
     public Transaction release(string name)
     {
+        remove(_saves, name);
         execute("RELEASE SAVEPOINT "~name~";");
         return this;
     }
@@ -175,6 +183,6 @@ enum TransactionIsolation : string
 {
     Serializable    = "SERIALIZABLE",
     RepeatableRead  = "REPEATABLE READ",
-    ReadCommited    = "READ COMMITED",
-    ReadUncommited  = "READ UNCOMMITED"
+    ReadCommited    = "READ COMMITTED",
+    ReadUncommited  = "READ UNCOMMITTED"
 }

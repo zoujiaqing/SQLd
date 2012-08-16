@@ -368,8 +368,8 @@ class MySQL : Database
     public override Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadCommited)
     {
         Transaction t = new Transaction(this);
+        execute("SET TRANSACTION ISOLATION LEVEL " ~ cast(string)level~";");
         execute("BEGIN;");
-        execute("SET TRANSACTION ISOLATION LEVEL "~to!string(level));
         return t;
     } 
     
