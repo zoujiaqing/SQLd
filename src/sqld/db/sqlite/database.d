@@ -83,7 +83,8 @@ class SQLite : Database
     }
     
     protected this()
-    {   
+    {
+        Database.instance = this;   
     }
     
     public ~this()
@@ -115,7 +116,7 @@ class SQLite : Database
         
         if(res != SQLITE_OK)
         {
-            throw new DatabaseException("Could not open database");
+            throw new ConnectionException("Could not connect to database");
         }
         
         return this;
@@ -142,33 +143,6 @@ class SQLite : Database
         return this;
     }
     
-    /**
-     * Queries database with specified query
-     *
-     * Examples:
-     * ---
-     * auto rows = db.execute("INSERT ...");
-     * ---
-     *
-     * Params:
-     *   query = Query to execute
-     *
-     * Throws:
-     *  DatabaseException
-     *
-     * Returns:
-     *   Affected rows
-     */
-    /*public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
-    {
-        int res = sqlite3_exec(_sql, query.c, null, null, null);
-        
-        if ( res != SQLITE_OK )
-        {
-            throw new DatabaseException("Could not execute query: " ~ query, file, line);
-        }
-        return sqlite3_changes(_sql);
-    }*/
     
     /**
      * Executes query and returns result
@@ -202,6 +176,10 @@ class SQLite : Database
      */
     public override SQLiteResult execute(string query, string file = __FILE__, uint line = __LINE__)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot execute query without connecting to database");
+        }
+        
         sqlite3_stmt* stmt;
         int res;
         
@@ -209,7 +187,7 @@ class SQLite : Database
         
         if ( res != SQLITE_OK )
         {
-            throw new DatabaseException("Could not execute query: '"~query~"', "~ error.msg, file, line );
+            throw new QueryException("Could not execute query: '"~query~"', "~ error.msg, file, line );
         }
         
         return new SQLiteResult(_sql, stmt);
@@ -228,6 +206,10 @@ class SQLite : Database
      */
     public override string escape(string str)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot escape string without connecting to database");
+        }
+        
         string ret = str;
         ret = ret.replace(`\`, `\\`);
         ret = ret.replace(`'`, `\'`);
@@ -246,6 +228,10 @@ class SQLite : Database
      */
     public override Statement prepare(string query)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot prepare statement without connecting to database");
+        }
+        
         return new Statement(this, query);
     }
     
@@ -257,6 +243,10 @@ class SQLite : Database
      */
     public override Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadUncommited)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot begin transaction without connecting to database");
+        }
+        
         Transaction t = new Transaction(this);
         execute("BEGIN;");
         sqlite3_enable_shared_cache(1);

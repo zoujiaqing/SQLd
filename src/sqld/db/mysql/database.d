@@ -74,7 +74,7 @@ class MySQL : Database
     public this(string[string] params)
     {
         if("host" !in params) {
-            throw new DatabaseException("No 'host' parameter specified");
+            throw new ConnectionDetailsException("No 'host' parameter specified");
         } else {
             _host = params["host"];
         }
@@ -198,9 +198,8 @@ class MySQL : Database
     {
         _sql = mysql_init(null);
         
-        if(_sql == null)
-        {
-            throw new DatabaseException("Could not init");
+        if(_sql == null) {
+            throw new ConnectionException("Could not init mysql instance");
         }
         
         _sql = mysql_real_connect(_sql,
@@ -213,8 +212,9 @@ class MySQL : Database
         
         if(_sql == null)
         {
-            throw new DatabaseException("Could not connect");
+            throw new DatabaseException("Could not connect to database");
         }
+        
         execute("SET NAMES `utf8`");
         return this;
     }
@@ -239,35 +239,6 @@ class MySQL : Database
         
         return this;
     }
-    
-    
-    /**
-     * Queries database with specified query
-     *
-     * Examples:
-     * ---
-     * auto rows = db.execute("INSERT ...");
-     * ---
-     *
-     * Params:
-     *   query = Query to execute
-     *
-     * Throws:
-     *  DatabaseException
-     *
-     * Returns:
-     *   Affected rows
-     */
-    /*public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
-    {
-        uint res = mysql_query(_sql, query.c);
-        if(res)
-        {
-            throw new DatabaseException("Could not execute query '"~query~"': " ~ this.error.msg, file, line);
-        }
-        
-        return mysql_affected_rows(_sql);
-    }*/
     
     /**
      * Executes query and returns result
@@ -300,6 +271,10 @@ class MySQL : Database
      */
     public override MySQLResult execute(string query, string file = __FILE__, uint line = __LINE__)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot execute query without connecting to database");
+        }
+        
         MYSQL_RES* result;
         int res;
         
@@ -307,14 +282,14 @@ class MySQL : Database
         
         if(res)
         {
-            throw new DatabaseException("Could not execute query '"~query~"': " ~ this.error.msg, file, line);
+            throw new QueryException("Could not execute query '"~query~"': " ~ this.error.msg, file, line);
         }
         else
         {
             result = mysql_store_result(_sql);
             if(result is null && mysql_field_count(_sql) != 0 )
             {                
-                 throw new DatabaseException("Could not store result: "~query, file, line);
+                 throw new QueryException("Could not store result: "~query, file, line);
             }
         }
         
@@ -336,6 +311,10 @@ class MySQL : Database
      */
     public override string escape(string str)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot escape string without connecting to database");
+        }
+        
         char[] tmp = new char[str.length * 2 + 1];
         uint u;
         
@@ -356,6 +335,10 @@ class MySQL : Database
      */
     public override Statement prepare(string query)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot prepare statement without connecting to database");
+        }
+        
         return new Statement(this, query);
     }
     
@@ -367,6 +350,10 @@ class MySQL : Database
      */
     public override Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadCommited)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot begin transaction without connecting to database");
+        }
+        
         Transaction t = new Transaction(this);
         execute("SET TRANSACTION ISOLATION LEVEL " ~ cast(string)level~";");
         execute("BEGIN;");

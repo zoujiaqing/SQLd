@@ -4,6 +4,7 @@ public import
      sqld.base.database,
      sqld.base.result,
      sqld.base.row,
+     sqld.base.error,
      sqld.model;
      
 

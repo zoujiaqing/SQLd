@@ -8,8 +8,11 @@ import sqld.base.row,
  */
 class Result
 {
+    ///
     abstract bool isValid() @property;
+    ///
     abstract bool next();
+    ///
     abstract void reset();
     
     /**

@@ -16,6 +16,43 @@ class DatabaseException : Exception
 }
 
 /**
+ * Thrown if there was error durning connecting to database, or connection was lost
+ */
+class ConnectionException : DatabaseException
+{
+    ///
+    this(string txt = "", string file = __FILE__, int line = __LINE__)
+    {
+        super(txt, file, line);
+    }
+}
+
+/**
+ * Thrown if invalid connection details where specified
+ */
+class ConnectionDetailsException : DatabaseException
+{
+    ///
+    this(string txt = "", string file = __FILE__, int line = __LINE__)
+    {
+        super(txt, file, line);
+    }
+}
+
+/**
+ * Thrown if error occured durning executing query
+ */
+class QueryException : DatabaseException
+{
+    ///
+    this(string txt = "", string file = __FILE__, int line = __LINE__)
+    {
+        super(txt, file, line);
+    }
+}
+
+
+/**
  * Represents database error
  */
 class DatabaseError
@@ -37,24 +74,11 @@ class DatabaseError
     alias number code;
     
     /**
-     * Source code file name in which error occured
-     */
-    public string file;
-    
-    /**
-     * Source code liine in which error occured
-     */
-    public int line;
-    
-    
-    /**
      * Creates new DatabaseError instance
      *
      * Params:
      *  number  = Error number
      *  message = Error message
-     *  file    = Source code file
-     *  line    = Source code line
      */
     public this(int number, string message)
     {

@@ -36,6 +36,8 @@ class Postgre : Database
     {
         _params = params;
         _aliases = ["pass": "password", "db": "dbname"];
+        
+        this();
     }
     
     /**
@@ -81,6 +83,13 @@ class Postgre : Database
             auto param = params[i];
             _params[param.name] = param.value;
         }
+        
+        this();
+    }
+    
+    protected this()
+    {
+        Database.instance = this;   
     }
     
     
@@ -101,16 +110,16 @@ class Postgre : Database
      * Throws:
      *  DatabaseException if could not connect
      */
-    public override Database open()
+    public override Postgre open()
     {
         _sql = PQconnectdb(paramsToCString());
         
         if( (_code = PQstatus(_sql)) != CONNECTION_OK) {
             _error.msg = to!string(PQerrorMessage(_sql));
-            throw new DatabaseException("Could not connect: "~_error.msg);
+            throw new ConnectionException("Could not connect to database: "~_error.msg);
         }
         
-        return cast(Database)this;
+        return this;
     }
     
     /**
@@ -166,50 +175,23 @@ class Postgre : Database
      */
     public override PostgreResult execute(string query, string file = __FILE__, uint line = __LINE__)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot escape string without connecting to database");
+        }
+        
         PGresult* _res = PQexec(_sql, query.toStringz);
         
         auto status = PQresultStatus(_res);
         
         if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
             _error.msg = to!string(PQresultErrorMessage(_res));
-            throw new DatabaseException(_error.msg, file, line);
+            throw new QueryException(_error.msg, file, line);
         }
         
         return new PostgreResult(_sql, _res);
     }
     
-    /**
-     * Queries database with specified query
-     *
-     * Examples:
-     * ---
-     * auto rows = db.execute("INSERT ...");
-     * ---
-     *
-     * Params:
-     *   query = Query to execute
-     *
-     * Throws:
-     *  DatabaseException
-     *
-     * Returns:
-     *   Affected rows
-     */
-    /*public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
-    {
-        PGresult* _res = PQexec(_sql, query.toStringz);
-        auto status = PQresultStatus(_res);
-        
-        if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
-            throw new DatabaseException(to!string(PQresultErrorMessage(_res)), file, line);
-        }
-            
-        string res = to!string(PQcmdTuples(_res));
-        if(res == "")
-            return -1;
-        else
-            return to!ulong(res);
-    }*/
+    
     
     /**
      * Escapes string
@@ -226,6 +208,10 @@ class Postgre : Database
      */
     public override string escape(string str)
     {   
+        if(_sql is null) {
+            throw new ConnectionException("Cannot execute query without connecting to database");
+        }
+        
         char[] buf = new char[str.length * 2 + 1];
         size_t u;
         u = PQescapeStringConn(_sql, buf.ptr, str.toStringz, str.length, null);
@@ -245,6 +231,10 @@ class Postgre : Database
      */
     public override Statement prepare(string query)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot prepare statement without connecting to database");
+        }
+        
         return new Statement(this, query);
     }
     
@@ -256,6 +246,10 @@ class Postgre : Database
      */
     public override Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadCommited)
     {
+        if(_sql is null) {
+            throw new ConnectionException("Cannot begin transaction without connecting to database");
+        }
+            
         Transaction t = new Transaction(this);
         execute("BEGIN;");
         execute("SET TRANSACTION "~ cast(string)level);
