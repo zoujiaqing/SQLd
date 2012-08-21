@@ -7,15 +7,18 @@ import sqld.base.database,
        sqld.db.postgre.database;
        
 import std.conv : to;
+import std.string : stripRight;
 
 class PostgreResult : Result
 {
+    protected PGconn*   _db;
     protected PGresult* _res;
     protected int       _rows;
     protected int       _fieldNum;
     protected int       _index;
     protected string[]  _fields;
     protected bool      _usable;
+    protected ulong     _affected;
     
     
     /**
@@ -24,8 +27,9 @@ class PostgreResult : Result
      * Params:  
      *  res = Postgre result
      */
-    public this(PGresult* res)
+    public this(PGconn* db, PGresult* res)
     {
+        _db = db;
         _res = res;
         
         if(PQresultStatus(res) == PGRES_TUPLES_OK)
@@ -35,6 +39,14 @@ class PostgreResult : Result
             
             loadFields();
             _usable = true;
+            _affected = _rows;
+        }
+        else if(PQresultStatus(res) == PGRES_COMMAND_OK)
+        {
+            string strres = to!string(PQcmdTuples(_res));
+            if(strres != "") {
+                _affected = to!ulong(strres);
+            }
         }
     }
     
@@ -78,13 +90,14 @@ class PostgreResult : Result
      * Returns:
      *  Array with current row data
      */
-    public Row fetch(string file = __FILE__, uint line = __LINE__)
+    public override Row fetch(string file = __FILE__, uint line = __LINE__)
     {
         string[] row;
+        int size;
         
         for(int i; i < _fieldNum; i++ )
         {
-            row ~= to!string(PQgetvalue(_res, _index, i));
+            row ~= to!string(PQgetvalue(_res, _index, i)).stripRight();
         }
         
         
@@ -99,7 +112,7 @@ class PostgreResult : Result
      * Returns:
      *  True if any rows are remaining, false otherwise
      */
-    public bool next()
+    public override bool next()
     {
         if( ++_index >= _rows  )
         {
@@ -112,7 +125,7 @@ class PostgreResult : Result
     /**
      * Resets current index
      */
-    public void reset()
+    public override void reset()
     {
         _index = 0;
     }
@@ -122,7 +135,7 @@ class PostgreResult : Result
      *
      * After freeing instance is not usable anymore
      */
-    public void free()
+    public override void free()
     {
         if(_usable)
         {
@@ -137,7 +150,7 @@ class PostgreResult : Result
      * Returns:
      *  Row count
      */
-    public ulong length() @property
+    public override ulong length() @property
     {
         return _rows;
     }
@@ -148,7 +161,7 @@ class PostgreResult : Result
      * Returns:
      *  Array of fields
      */
-    public string[] fields() @property
+    public override string[] fields() @property
     {
         return _fields;
     }
@@ -159,7 +172,7 @@ class PostgreResult : Result
      * Returns:
      *  True if there are any remeaining rows
      */
-    public bool isValid() @property
+    public override bool isValid() @property
     {
         return (_index < _rows) && _usable;
     }
@@ -170,17 +183,16 @@ class PostgreResult : Result
      * Returns:
      *  Current row offset
      */
-    public ulong index() @property
+    public override ulong index() @property
     {
         return _index;
     }
     
-    
-    /* Range stuff */
-    bool empty()
+    /**
+     * Affected rows
+     */
+    public override ulong affectedRows() @property
     {
-        return _index >= _rows;
+        return _affected;
     }
-    Row front() { return fetch(); }
-    void popFront() { next(); }
 }

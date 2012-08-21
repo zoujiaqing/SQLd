@@ -1,11 +1,10 @@
-module sqld.statement;
+module sqld.base.statement;
 
 import sqld.base.database,
        sqld.base.result;
 import std.conv : to;
 import std.array : replace, replaceFirst;
-
-import std.stdio;
+import std.traits : isSomeString;
 
 /**
  * Represents statement
@@ -16,8 +15,6 @@ class Statement
     
     protected Database _db;
     protected string   _query;
-    /*protected string[] _bindings;
-    protected string[string] _named;*/
     
     /**
      * Creates new statement
@@ -47,9 +44,26 @@ class Statement
      */
     public self bind(T)(T _value, bool escape = true)
     {
-        string value = to!string(_value);
-        _query = _query.replaceFirst("?", escape ? _db.escape(value) : value);
-        
+        static if(is(T == struct))
+        {
+            foreach(mem; __traits(allMembers, T))
+            {
+                bind(":"~mem, mixin("_value."~mem));
+            }
+        }
+        else
+        {
+            import std.stdio;
+            
+            string value = to!string(_value);
+            value = escape ? _db.escape(value) : value;
+            
+            static if(isSomeString!T) {
+                value = "'"~value~"'";
+            }
+            
+            _query = _query.replaceFirst("?", value);
+        }
         
         return this;
     }
@@ -75,6 +89,20 @@ class Statement
         
         return this;
     }
+    
+    
+    /**
+     * Built query
+     */
+    public string query() @property
+    {
+        return _query;
+    }
+    
+    /// ditto
+    alias query toString;
+    
+    
     
     /**
      * Compiles and executes statement

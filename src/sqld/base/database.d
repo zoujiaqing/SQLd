@@ -4,7 +4,7 @@ import sqld.base.error,
        sqld.base.result,
        sqld.base.transaction,
        sqld.uri,
-       sqld.statement,
+       sqld.base.statement,
        sqld.db.mysql.database,
        sqld.db.sqlite.database,
        sqld.db.postgre.database;
@@ -50,12 +50,9 @@ abstract class Database
      * Returns:
      *  Result
      */
-    abstract Result query(string query, string file = __FILE__, uint line = __LINE__);
-    
-    /**
-     * Begins transaction
-     */
-    //abstract Transaction beginTransaction(); Work In Progress
+    abstract Result execute(string query, string file = __FILE__, uint line = __LINE__);
+    /// ditto
+    alias execute query;
     
     /**
      * Prepares new statement with speicified query
@@ -75,26 +72,6 @@ abstract class Database
      *  Transaction
      */
     abstract public Transaction beginTransaction(TransactionIsolation level = TransactionIsolation.ReadCommited);
-    
-    
-    /**
-     * Queries database with specified query
-     *
-     * Params:
-     *   query = Query to execute
-     *
-     * Throws:
-     *  DatabaseException
-     *
-     * Returns:
-     *   Affected rows
-     */
-    abstract public ulong execute(string query, string file = __FILE__, uint line = __LINE__);
-    
-    /**
-     * Returns last inserted row id
-     */
-    abstract public ulong insertedId() @property; 
     
     /**
      * Escapes string

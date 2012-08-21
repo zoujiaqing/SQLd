@@ -14,6 +14,7 @@ int PQstatus(PGconn*);
 void PQfreemem(const(void)*ptr);
 
 const (char*) PQerrorMessage(PGconn*);
+const (char*) PQresultErrorMessage(PGresult*);
 
 PGresult* PQexec(PGconn*, const(char)*);
 void PQclear(PGresult*);
@@ -27,6 +28,7 @@ int PQntuples(PGresult*);
 const(char*) PQgetvalue(PGresult*, int row, int column);
 
 size_t PQescapeString (char *to, const(char)* from, size_t length);
+size_t PQescapeStringConn(PGconn *conn, char *to, const(char)* from, size_t length, int *error);
 const(char)* PQescapeLiteral(PGconn*, const(char)*, size_t);
 const(char)* PQcmdTuples(PGresult*);
 

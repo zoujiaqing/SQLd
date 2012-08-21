@@ -8,9 +8,14 @@ import std.conv      : to, ConvException;
 class Row
 {
     /**
+     * Row fields
+     */
+    protected string[] _fields;
+    
+    /**
      * Row data
      */
-    protected string[string] _data;
+    protected string[] _data;
     
     
     /**
@@ -20,10 +25,11 @@ class Row
      *  data = Row data
      */
     this(string[] data, string[] fields)
-    {
+    {   
         for(int i; i < fields.length; i++)
         {
-            _data[fields[i]] = data[i];
+            _data = data;
+            _fields = fields;
         }
     }
     
@@ -38,12 +44,12 @@ class Row
      */
     public string opIndex(string name)
     {
-        if(name !in _data)
+        for(int i; i < _fields.length; i++)
         {
-            throw new Exception("Index does not exists");
+            if(_fields[i] == name)
+                return _data[i];
         }
-        
-        return _data[name];
+        throw new Exception("Index does not exists");
     }
     
     /**
@@ -57,7 +63,27 @@ class Row
      */
     public string opIndex(uint i)
     {
-        return _data.values[i];
+        return _data[i];
+    }
+    
+    /**
+     * Gets rows value as specified type
+     *
+     * If value cannot be casted to T, exception is thrown
+     *
+     * Params:
+     *  name = Field name
+     *
+     * Throws:
+     *  ConvException
+     *
+     * Returns:
+     *  Row value
+     */
+    public T get(T)(string name)
+    {
+        auto val = this[name];
+        return to!T(val);
     }
     
     /**
@@ -68,16 +94,16 @@ class Row
      */
     public string[] fields() @property
     {
-        return _data.keys;
+        return _fields;
     }
     
     public int opApply( int delegate(string name, string value) dg )
     {
         int result;
         
-        foreach(field, value; _data)
+        for(int i; i < _fields.length; i++)
         {
-            result = dg(field, value);
+            result = dg(_fields[i], _data[i]);
             
             if(result) break;
         }
@@ -90,7 +116,12 @@ class Row
      */
     public string[string] toAssocArray()
     {
-        return _data;
+        string[string] aa;
+        
+        for(int i; i < _fields.length; i++)
+            aa[_fields[i]] = _data[i];
+            
+        return aa;
     }
     
     /**
@@ -98,7 +129,7 @@ class Row
      */
     public string[] toArray()
     {
-        return _data.values;
+        return _data;
     }
     
     /**
@@ -109,7 +140,7 @@ class Row
      */
     public override string toString()
     {
-        return to!string(_data);
+        return to!string(toAssocArray());
     }
     
     /**

@@ -10,12 +10,12 @@ import sqld.base.database,
        sqld.base.error,
        sqld.base.transaction,
        sqld.uri,
-       sqld.statement,
+       sqld.base.statement,
        etc.c.sqlite3,
        sqld.db.sqlite.result;
        
-import std.string : toStringz;
-import std.conv   : to;
+import std.string    : toStringz, replace;
+import std.conv      : to;
 
 version(Windows)
 {
@@ -110,7 +110,7 @@ class SQLite : Database
      *  DatabaseException if could not connect
      */
     public override Database open()
-    {
+    {   
         int res = sqlite3_open(file.c, &_sql);
         
         if(res != SQLITE_OK)
@@ -159,7 +159,7 @@ class SQLite : Database
      * Returns:
      *   Affected rows
      */
-    public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
+    /*public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         int res = sqlite3_exec(_sql, query.c, null, null, null);
         
@@ -168,7 +168,7 @@ class SQLite : Database
             throw new DatabaseException("Could not execute query: " ~ query, file, line);
         }
         return sqlite3_changes(_sql);
-    }
+    }*/
     
     /**
      * Executes query and returns result
@@ -200,7 +200,7 @@ class SQLite : Database
      * Returns:
      *  SQLiteResult
      */
-    public override SQLiteResult query(string query, string file = __FILE__, uint line = __LINE__)
+    public override SQLiteResult execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         sqlite3_stmt* stmt;
         int res;
@@ -209,10 +209,10 @@ class SQLite : Database
         
         if ( res != SQLITE_OK )
         {
-            throw new DatabaseException("Could not execute query: "~query, file, line );
+            throw new DatabaseException("Could not execute query: '"~query~"', "~ error.msg, file, line );
         }
         
-        return new SQLiteResult(stmt);
+        return new SQLiteResult(_sql, stmt);
     }
     
     /**
@@ -228,7 +228,11 @@ class SQLite : Database
      */
     public override string escape(string str)
     {
-        return to!(string)(sqlite3_mprintf("%q".c, str.c));
+        string ret = str;
+        ret = ret.replace(`\`, `\\`);
+        ret = ret.replace(`'`, `\'`);
+        ret = ret.replace(`"`, `\"`);
+        return ret;
     }
     
     /**
@@ -316,13 +320,5 @@ class SQLite : Database
     public sqlite3* handle() @property
     {
         return _sql;
-    }
-    
-    /**
-     * Returns: last inserted row id
-     */
-    public override ulong insertedId() @property
-    {
-        return sqlite3_last_insert_rowid(_sql);
     }
 }

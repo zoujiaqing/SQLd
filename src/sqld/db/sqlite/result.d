@@ -35,6 +35,7 @@ class SQLiteResult : Result
 {   
     protected
     {
+        sqlite3* _db;
         sqlite3_stmt* _res;
         bool _usable;
         bool _valid;
@@ -42,6 +43,7 @@ class SQLiteResult : Result
         string[] _fields;
         int _fieldNum;
         
+        ulong _affected;
         ulong _rows;
         ulong _index;
     }
@@ -54,14 +56,21 @@ class SQLiteResult : Result
      * Params:  
      *  res = MySQL result
      */
-    this( sqlite3_stmt* res)
+    this( sqlite3* db, sqlite3_stmt* res)
     {
+        _db = db;
         _res = res;
         _usable = true;
         _fieldNum = sqlite3_column_count(_res);
         
         while(next()) ++_rows;
         reset();
+        
+        if(_rows < 1 ) {
+            _affected = sqlite3_changes(_db);
+        } else {
+            _affected = _rows;
+        }
         
         loadFields();
         next();
@@ -90,7 +99,7 @@ class SQLiteResult : Result
      *
      * After freeing instance is not usable anymore
      */
-    public void free()
+    public override void free()
     {
         if(_usable)
         {
@@ -118,7 +127,7 @@ class SQLiteResult : Result
      * Returns:
      *  Row
      */
-    public Row fetch(string file = __FILE__, uint line = __LINE__)
+    public override Row fetch(string file = __FILE__, uint line = __LINE__)
     {
         string[] vals;
         for(int i = 0; i < _fieldNum; i++ )
@@ -126,24 +135,6 @@ class SQLiteResult : Result
             vals ~= to!(string)(sqlite3_column_text(_res, i));
         }
         return new Row(vals, _fields);
-    }
-    
-    /**
-     * Loops through rows
-     *
-     * Params:
-     *  Callback to call on each row occurence
-     */
-    public void each(bool delegate(Row) dg)
-    {
-        while(isValid)
-        {
-            if(!dg(fetch()))
-                break;
-                
-            if(!next())
-                break;
-        }
     }
     
     
@@ -155,7 +146,7 @@ class SQLiteResult : Result
      * Returns:
      *  True if any rows are remaining, false otherwise
      */
-    public bool next()
+    public override bool next()
     {
         int state = sqlite3_step(_res);
 
@@ -171,7 +162,7 @@ class SQLiteResult : Result
     /**
      * Resets current index
      */
-    public void reset()
+    public override void reset()
     {
         sqlite3_reset(_res);
         _valid = true;
@@ -184,7 +175,7 @@ class SQLiteResult : Result
      * Returns:
      *  Row count
      */
-    public ulong length() @property
+    public override ulong length() @property
     {
         return _rows;
     }
@@ -195,7 +186,7 @@ class SQLiteResult : Result
      * Returns:
      *  Array of fields
      */
-    public string[] fields() @property
+    public override string[] fields() @property
     {
         return _fields;
     }
@@ -206,7 +197,7 @@ class SQLiteResult : Result
      * Returns:
      *  True if there are any remeaining rows
      */
-    public bool isValid() @property
+    public override bool isValid() @property
     {
         return _valid;
     }
@@ -217,16 +208,17 @@ class SQLiteResult : Result
      * Returns:
      *  Current row offset
      */
-    public ulong index() @property
+    public override ulong index() @property
     {
         return _index;
     }
     
-    /* Range stuff */
-    bool empty()
+    
+    /**
+     * Affected rows
+     */
+    public override ulong affectedRows() @property
     {
-        return !_valid;
+        return _affected;
     }
-    Row front() { return fetch(); }
-    void popFront() { next(); }
 }

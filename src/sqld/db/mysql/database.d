@@ -10,7 +10,7 @@ import sqld.base.database,
        sqld.base.error,
        sqld.base.transaction,
        sqld.uri,
-       sqld.statement,
+       sqld.base.statement,
        sqld.c.mysql, 
        sqld.db.mysql.info,
        sqld.db.mysql.result;
@@ -258,7 +258,7 @@ class MySQL : Database
      * Returns:
      *   Affected rows
      */
-    public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
+    /*public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         uint res = mysql_query(_sql, query.c);
         if(res)
@@ -267,14 +267,14 @@ class MySQL : Database
         }
         
         return mysql_affected_rows(_sql);
-    }
+    }*/
     
     /**
      * Executes query and returns result
      *
      * Examples:
      * ---
-     * auto res = db.query("SELECT ...");
+     * auto res = db.execute("SELECT ...");
      * while(res.isValid)
      * {
      *     writeln(res.fetchAssoc());
@@ -282,7 +282,7 @@ class MySQL : Database
      * }
      * ---
      * ---
-     * auto res = db.query("SELECT ...");
+     * auto res = db.execute("SELECT ...");
      * foreach(row; res)
      * {
      *     writeln(res["id"]);
@@ -298,7 +298,7 @@ class MySQL : Database
      * Returns:
      *  MySQLResult
      */
-    public override MySQLResult query(string query, string file = __FILE__, uint line = __LINE__)
+    public override MySQLResult execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         MYSQL_RES* result;
         int res;
@@ -318,7 +318,7 @@ class MySQL : Database
             }
         }
         
-        return new MySQLResult(result);
+        return new MySQLResult(_sql, result);
     }
     
     /**
@@ -432,14 +432,6 @@ class MySQL : Database
     public MYSQL* handle() @property
     {
         return _sql;
-    }
-    
-    /**
-     * Returns last inserted row id
-     */
-    public override ulong insertedId() @property
-    {
-        return mysql_insert_id(_sql);
     }
     
     /**

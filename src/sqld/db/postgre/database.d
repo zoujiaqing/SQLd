@@ -5,11 +5,10 @@ import sqld.base.database,
        sqld.base.result,
        sqld.base.transaction,
        sqld.uri,
-       sqld.statement,
+       sqld.base.statement,
        sqld.c.postgre,
        sqld.db.postgre.result;
 import std.string;
-
 
 /**
  * Represents PostgreSQL database connection
@@ -21,6 +20,7 @@ class Postgre : Database
     protected string[string] _params;
     protected string[string] _aliases;
     protected int            _code;
+    protected DatabaseError  _error;
     
     
     /**
@@ -60,17 +60,15 @@ class Postgre : Database
         if(uri.user != "") {
             _params["user"] = uri.user;
         } else {
-            _params["user"] = "root";
+            _params["user"] = "postgres";
         }
         
         if(uri.password != "") {
-            _params["pass"] = uri.password;
-        } else {
-            _params["pass"] = "";
+            _params["password"] = uri.password;
         }
         
         if(uri.path.length > 1) {
-            _params["db"] = uri.path[1..$];
+            _params["dbname"] = uri.path[1..$];
         }
         
         if(uri.port != 0) {
@@ -108,7 +106,8 @@ class Postgre : Database
         _sql = PQconnectdb(paramsToCString());
         
         if( (_code = PQstatus(_sql)) != CONNECTION_OK) {
-            throw new DatabaseException("Could not connect: "~ to!string(PQerrorMessage(_sql)));
+            _error.msg = to!string(PQerrorMessage(_sql));
+            throw new DatabaseException("Could not connect: "~_error.msg);
         }
         
         return cast(Database)this;
@@ -165,11 +164,18 @@ class Postgre : Database
      * Returns:
      *  PostgreResult
      */
-    public override Result query(string query, string file = __FILE__, uint line = __LINE__)
+    public override PostgreResult execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         PGresult* _res = PQexec(_sql, query.toStringz);
         
-        return cast(Result)new PostgreResult(_res);
+        auto status = PQresultStatus(_res);
+        
+        if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
+            _error.msg = to!string(PQresultErrorMessage(_res));
+            throw new DatabaseException(_error.msg, file, line);
+        }
+        
+        return new PostgreResult(_sql, _res);
     }
     
     /**
@@ -189,17 +195,21 @@ class Postgre : Database
      * Returns:
      *   Affected rows
      */
-    public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
+    /*public override ulong execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         PGresult* _res = PQexec(_sql, query.toStringz);
+        auto status = PQresultStatus(_res);
         
-        assert(PQresultStatus(_res) == PGRES_COMMAND_OK);
+        if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
+            throw new DatabaseException(to!string(PQresultErrorMessage(_res)), file, line);
+        }
+            
         string res = to!string(PQcmdTuples(_res));
         if(res == "")
             return -1;
         else
             return to!ulong(res);
-    }
+    }*/
     
     /**
      * Escapes string
@@ -216,21 +226,12 @@ class Postgre : Database
      */
     public override string escape(string str)
     {   
-        auto buf = PQescapeLiteral(_sql, str.toStringz, str.length);
+        char[] buf = new char[str.length * 2 + 1];
+        size_t u;
+        u = PQescapeStringConn(_sql, buf.ptr, str.toStringz, str.length, null);
+        buf.length = u;
         
-        string tmp = to!string(buf);
-        PQfreemem(buf);
-        
-        return tmp;
-    }
-    
-    /**
-     * Returns: last inserted row id
-     */
-    public override ulong insertedId() @property
-    {
-        auto last = query("SELECT lastval();");
-        return to!ulong(last.fetch()[0][0]);
+        return to!string(buf);
     }
     
     /**
@@ -257,7 +258,7 @@ class Postgre : Database
     {
         Transaction t = new Transaction(this);
         execute("BEGIN;");
-        execute("SET TRANSACTION "~to!string(level));
+        execute("SET TRANSACTION "~ cast(string)level);
         return t;
     }
     
@@ -273,11 +274,8 @@ class Postgre : Database
      *  DatabaseError Last error
      */
     public override DatabaseError error() @property
-    {
-        int    no  = 0;
-        string msg = to!string(PQerrorMessage(_sql));
-        
-        return new DatabaseError(no, msg);
+    {   
+        return _error;
     }
     
     /**

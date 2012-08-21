@@ -36,6 +36,7 @@ class MySQLResult : Result
 {
     protected
     {
+        MYSQL* _db;
         MYSQL_RES* _res;
         bool _usable;
         
@@ -44,6 +45,7 @@ class MySQLResult : Result
         
         ulong _rows;
         ulong _index;
+        ulong _affected;
     }
     
     
@@ -53,8 +55,9 @@ class MySQLResult : Result
      * Params:  
      *  res = MySQL result
      */
-    this( MYSQL_RES* res)
+    this(MYSQL* db, MYSQL_RES* res)
     {
+        _db = db;
         _res = res;
         
         if(res !is null)
@@ -62,14 +65,14 @@ class MySQLResult : Result
             _rows = mysql_num_rows(_res);
             _fieldNum = mysql_num_fields(_res);
             
-            if(_fieldNum <= 0)
-            { 
-                throw new DatabaseException("Result set is empty");
-            }
-            
             loadFields();
             
+            _affected = _rows;
             _usable = true;
+        }
+        else
+        {
+            _affected = mysql_affected_rows(_db);
         }
     }
     
@@ -100,7 +103,7 @@ class MySQLResult : Result
      *
      * After freeing instance is not usable anymore
      */
-    public void free()
+    public override void free()
     {
         if(_usable)
         {
@@ -132,20 +135,18 @@ class MySQLResult : Result
      * Returns:
      *  Array with current row data
      */
-    public Row fetch(string file = __FILE__, uint line = __LINE__)
+    public override Row fetch(string file = __FILE__, uint line = __LINE__)
     {
         MYSQL_ROW crow;
         string[] row;
         
         crow = mysql_fetch_row(_res);
         
-        if(crow is null)
-        {
+        if(crow is null) {
             throw new DatabaseException("Could not fetch row.", file, line);
         }
         
-        for(int i; i < _fieldNum; i++ )
-        {
+        for(int i; i < _fieldNum; i++ ) {
             row ~= to!string(crow[i]);
         }
         
@@ -155,23 +156,6 @@ class MySQLResult : Result
         return new Row(row, _fields);
     }
     
-    /**
-     * Loops through rows
-     *
-     * Params:
-     *  Callback to call on each row occurence
-     */
-    public void each(bool delegate(Row) dg)
-    {
-        while(isValid)
-        {
-            if(!dg(fetch()))
-                break;
-                
-            if(!next())
-                break;
-        }
-    }
     
     /**
      * Proceedes to next row
@@ -181,7 +165,7 @@ class MySQLResult : Result
      * Returns:
      *  True if any rows are remaining, false otherwise
      */
-    public bool next()
+    public override bool next()
     {
         if( ++_index >= _rows  )
         {
@@ -197,7 +181,7 @@ class MySQLResult : Result
     /**
      * Resets current index
      */
-    public void reset()
+    public override void reset()
     {
         _index = 0;
     }
@@ -208,7 +192,7 @@ class MySQLResult : Result
      * Returns:
      *  Row count
      */
-    public ulong length() @property
+    public override ulong length() @property
     {
         return _rows;
     }
@@ -219,7 +203,7 @@ class MySQLResult : Result
      * Returns:
      *  Array of fields
      */
-    public string[] fields() @property
+    public override string[] fields() @property
     {
         return _fields;
     }
@@ -230,7 +214,7 @@ class MySQLResult : Result
      * Returns:
      *  True if there are any remeaining rows
      */
-    public bool isValid() @property
+    public override bool isValid() @property
     {
         return (_index < _rows) && _usable;
     }
@@ -241,17 +225,16 @@ class MySQLResult : Result
      * Returns:
      *  Current row offset
      */
-    public ulong index() @property
+    public override ulong index() @property
     {
         return _index;
     }
     
-    
-    /* Range stuff */
-    bool empty()
+    /**
+     * Affected rows
+     */
+    public override ulong affectedRows() @property
     {
-        return _index >= _rows;
+        return _affected;
     }
-    Row front() { return fetch(); }
-    void popFront() { next(); }
 }

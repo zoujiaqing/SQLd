@@ -124,28 +124,6 @@ class Transaction
         return _saves;
     }
     
-    /**
-     * Queries database with specified query
-     *
-     * Examples:
-     * ---
-     * auto trans = db.beginTransaction(); 
-     * auto rows = trans.execute("INSERT ...");
-     * ---
-     *
-     * Params:
-     *   query = Query to execute
-     *
-     * Throws:
-     *  DatabaseException
-     *
-     * Returns:
-     *   Affected rows
-     */
-    public ulong execute(string query, string file = __FILE__, uint line = __LINE__)
-    {   
-        return _db.execute(query, file, line);
-    }
     
     /**
      * Executes query and returns result
@@ -153,7 +131,7 @@ class Transaction
      * Examples:
      * ---
      * auto trans = db.beginTransaction(); 
-     * auto res = trans.query("SELECT ...");
+     * auto res = trans.execute("SELECT ...");
      * while(res.isValid)
      * {
      *     writeln(res.fetchAssoc());
@@ -170,19 +148,25 @@ class Transaction
      * Returns:
      *  Result
      */
-    public Result query(string query, string file = __FILE__, uint line = __LINE__)
+    public Result execute(string query, string file = __FILE__, uint line = __LINE__)
     { 
-        return _db.query(query, file, line);
+        return _db.execute(query, file, line);
     }
      
 }
 
 
-
+/**
+ * Transaction isolation
+ */
 enum TransactionIsolation : string
 {
+    ///
     Serializable    = "SERIALIZABLE",
+    ///
     RepeatableRead  = "REPEATABLE READ",
+    ///
     ReadCommited    = "READ COMMITTED",
+    ///
     ReadUncommited  = "READ UNCOMMITTED"
 }
