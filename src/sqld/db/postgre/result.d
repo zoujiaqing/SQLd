@@ -11,14 +11,17 @@ import std.string : stripRight;
 
 class PostgreResult : Result
 {
-    protected PGconn*   _db;
-    protected PGresult* _res;
-    protected int       _rows;
-    protected int       _fieldNum;
-    protected int       _index;
-    protected string[]  _fields;
-    protected bool      _usable;
-    protected ulong     _affected;
+    protected
+    {
+        PGconn*   _db;
+        PGresult* _res;
+        int       _rows;
+        int       _fieldNum;
+        int       _index;
+        string[]  _columns;
+        bool      _usable;
+        ulong     _affected;
+    }
     
     
     /**
@@ -37,7 +40,7 @@ class PostgreResult : Result
             _rows = PQntuples(_res);
             _fieldNum = PQnfields(_res);
             
-            loadFields();
+            loadColumns();
             _usable = true;
             _affected = _rows;
         }
@@ -60,11 +63,11 @@ class PostgreResult : Result
     /**
      * Loads field array
      */
-    protected void loadFields()
+    protected void loadColumns()
     {
         for(int i; i < _fieldNum; i++)
         {
-            _fields ~= to!string(PQfname(_res, i)); 
+            _columns ~= to!string(PQfname(_res, i)); 
         }
     }
     
@@ -101,7 +104,7 @@ class PostgreResult : Result
         }
         
         
-        return new Row(row, _fields);
+        return new Row(row, _columns);
     }
     
     /**
@@ -156,14 +159,14 @@ class PostgreResult : Result
     }
     
     /**
-     * Query result fields
+     * Query result columns
      *
      * Returns:
-     *  Array of fields
+     *  Array of columns
      */
-    public override string[] fields() @property
+    public override string[] columns() @property
     {
-        return _fields;
+        return _columns;
     }
     
     /**

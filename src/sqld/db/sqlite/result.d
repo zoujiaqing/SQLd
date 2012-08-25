@@ -40,7 +40,7 @@ class SQLiteResult : Result
         bool _usable;
         bool _valid;
         
-        string[] _fields;
+        string[] _columns;
         int _fieldNum;
         
         ulong _affected;
@@ -63,6 +63,7 @@ class SQLiteResult : Result
         _usable = true;
         _fieldNum = sqlite3_column_count(_res);
         
+        /// to be changed
         while(next()) ++_rows;
         reset();
         
@@ -72,7 +73,7 @@ class SQLiteResult : Result
             _affected = _rows;
         }
         
-        loadFields();
+        loadColumns();
         next();
     }
     
@@ -85,11 +86,11 @@ class SQLiteResult : Result
     /**
      * Loads field array
      */
-    protected void loadFields()
+    protected void loadColumns()
     {
         for ( int i = 0; i < _fieldNum; i++ )
         {
-            _fields ~= to!(string)(sqlite3_column_name(_res, i));
+            _columns ~= to!(string)(sqlite3_column_name(_res, i));
         }
     }
     
@@ -134,7 +135,7 @@ class SQLiteResult : Result
         {
             vals ~= to!(string)(sqlite3_column_text(_res, i));
         }
-        return new Row(vals, _fields);
+        return new Row(vals, _columns);
     }
     
     
@@ -181,14 +182,14 @@ class SQLiteResult : Result
     }
     
     /**
-     * Query result fields
+     * Query result columns
      *
      * Returns:
-     *  Array of fields
+     *  Array of columns
      */
-    public override string[] fields() @property
+    public override string[] columns() @property
     {
-        return _fields;
+        return _columns;
     }
     
     /**

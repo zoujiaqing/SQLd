@@ -37,10 +37,6 @@ class SQLite : Database
      * Database file
      */
     public string file;
-    
-    /**
-     * MySQL handle
-     */
     protected sqlite3* _sql;
     
     

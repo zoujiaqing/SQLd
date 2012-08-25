@@ -30,11 +30,7 @@ class Statement
     }
     
     /**
-     * Binds value
-     *
-     * Binded values are keeped, and binded on compilation of statement.
-     * Variables binded using this function will be replaced for `?` characters.
-     * Binded values are escaped.
+     * Binds column
      *
      * Params:
      *  value = Value to bind
@@ -42,38 +38,18 @@ class Statement
      * Returns:
      *  Self
      */
-    public self bind(T)(T _value, bool escape = true)
+    public self bindColumn(T)(T _value)
     {
-        static if(is(T == struct))
-        {
-            foreach(mem; __traits(allMembers, T))
-            {
-                bind(":"~mem, mixin("_value."~mem));
-            }
-        }
-        else
-        {
-            import std.stdio;
-            
-            string value = to!string(_value);
-            value = escape ? _db.escape(value) : value;
-            
-            static if(isSomeString!T) {
-                value = "'"~value~"'";
-            }
-            
-            _query = _query.replaceFirst("?", value);
-        }
+        string value = to!string(_value);
+        value = _db.escape(value);
+        
+        _query = _query.replaceFirst("?", value);
         
         return this;
     }
     
     /**
-     * Binds value
-     *
-     * Binded values are keeped, and binded on compilation of statement.
-     * Variables binded using this function will be replaced for string specified
-     * in name parameter. Binded values are escaped.
+     * Binds column
      *
      * Params:
      *  name = Name to replace
@@ -82,14 +58,54 @@ class Statement
      * Returns:
      *  Self
      */
-    public self bind(T)(string name, T _value, bool escape = true)
+    public self bindColumn(T)(string name, T _value)
     {
         string value = to!string(_value);
-        _query = _query.replace(name, escape ? _db.escape(value) : value);
+        _query = _query.replace(name, _db.escape(value));
         
         return this;
     }
     
+    /**
+     * Binds value
+     *
+     * Params:
+     *  value = Value to bind
+     *
+     * Returns:
+     *  Self
+     */
+    public self bindValue(T)(T _value)
+    {
+        string value = to!string(_value);
+        value = _db.escape(value);
+        
+        static if(isSomeString!T) {
+            value = "'"~value~"'";
+        }
+        
+        _query = _query.replaceFirst("?", value);
+        
+        return this;
+    }
+    
+    /**
+     * Binds value
+     *
+     * Params:
+     *  name = Name to replace
+     *  value = Value to bind
+     *
+     * Returns:
+     *  Self
+     */
+    public self bindValue(T)(string name, T _value)
+    {
+        string value = to!string(_value);
+        _query = _query.replace(name, _db.escape(value));
+        
+        return this;
+    }
     
     /**
      * Built query
@@ -101,7 +117,6 @@ class Statement
     
     /// ditto
     alias query toString;
-    
     
     
     /**

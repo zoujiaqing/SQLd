@@ -15,12 +15,14 @@ import std.string;
  */
 class Postgre : Database
 {
-    /// Postgre database handle
-    protected PGconn*        _sql;
-    protected string[string] _params;
-    protected string[string] _aliases;
-    protected int            _code;
-    protected DatabaseError  _error;
+    protected
+    {
+        PGconn*        _sql;
+        string[string] _params;
+        string[string] _aliases;
+        int            _code;
+        DatabaseError  _error;
+    }
     
     
     /**
@@ -89,6 +91,7 @@ class Postgre : Database
     
     protected this()
     {
+        _error = new DatabaseError(0, "");
         Database.instance = this;   
     }
     
@@ -180,7 +183,6 @@ class Postgre : Database
         }
         
         PGresult* _res = PQexec(_sql, query.toStringz);
-        
         auto status = PQresultStatus(_res);
         
         if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {

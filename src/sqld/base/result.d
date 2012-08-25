@@ -5,6 +5,8 @@ import sqld.base.row,
 
 /**
  * Represents database query result
+ *
+ * This class implements range interface.
  */
 class Result
 {
@@ -16,9 +18,12 @@ class Result
     abstract void reset();
     
     /**
-     * Field names
+     * Columns names
      */
-    abstract public string[] fields() @property;
+    abstract public string[] columns() @property;
+    
+    /// ditto
+    alias columns fields;
     
     /**
      * Rows count

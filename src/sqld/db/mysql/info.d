@@ -14,11 +14,7 @@ import std.conv : to;
  */
 struct MySQLInfo
 {
-    /**
-     * Client version as string
-     */
     private MYSQL* _sql;
-    
     
     
     /**

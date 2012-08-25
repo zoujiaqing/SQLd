@@ -87,7 +87,12 @@ abstract class Database
     /**
      * Current database instance
      */
-    static Database instance = null;
+    public static Database instance = null;
+    
+    /**
+     * Drivers bindings
+     */
+    public static Database[string] drivers;
     
     /**
      * Creates new database instance
@@ -117,7 +122,11 @@ abstract class Database
             break;
             
             default:
-                assert(0, "Unsupported database type");
+                if(uri.rawscheme !in drivers) {
+                    assert(0, "Unsupported database type");
+                } else {
+                    return drivers[uri.rawscheme];
+                }
         }
         
         return Database.instance;

@@ -8,9 +8,9 @@ import std.conv      : to, ConvException;
 class Row
 {
     /**
-     * Row fields
+     * Row columns
      */
-    protected string[] _fields;
+    protected string[] _columns;
     
     /**
      * Row data
@@ -24,12 +24,12 @@ class Row
      * Params:
      *  data = Row data
      */
-    this(string[] data, string[] fields)
+    this(string[] data, string[] columns)
     {   
-        for(int i; i < fields.length; i++)
+        for(int i; i < columns.length; i++)
         {
             _data = data;
-            _fields = fields;
+            _columns = columns;
         }
     }
     
@@ -44,9 +44,9 @@ class Row
      */
     public string opIndex(string name)
     {
-        for(int i; i < _fields.length; i++)
+        for(int i; i < _columns.length; i++)
         {
-            if(_fields[i] == name)
+            if(_columns[i] == name)
                 return _data[i];
         }
         throw new Exception("Index does not exists");
@@ -92,18 +92,21 @@ class Row
      * Returns:
      *  Array of field names
      */
-    public string[] fields() @property
+    public string[] columns() @property
     {
-        return _fields;
+        return _columns;
     }
+    
+    /// ditto
+    alias columns fields;
     
     public int opApply( int delegate(string name, string value) dg )
     {
         int result;
         
-        for(int i; i < _fields.length; i++)
+        for(int i; i < _columns.length; i++)
         {
-            result = dg(_fields[i], _data[i]);
+            result = dg(_columns[i], _data[i]);
             
             if(result) break;
         }
@@ -118,8 +121,8 @@ class Row
     {
         string[string] aa;
         
-        for(int i; i < _fields.length; i++)
-            aa[_fields[i]] = _data[i];
+        for(int i; i < _columns.length; i++)
+            aa[_columns[i]] = _data[i];
             
         return aa;
     }

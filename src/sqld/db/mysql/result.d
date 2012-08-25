@@ -40,8 +40,8 @@ class MySQLResult : Result
         MYSQL_RES* _res;
         bool _usable;
         
-        string[] _fields;
-        int _fieldNum;
+        string[] _columns;
+        int _columnNum;
         
         ulong _rows;
         ulong _index;
@@ -63,9 +63,9 @@ class MySQLResult : Result
         if(res !is null)
         {
             _rows = mysql_num_rows(_res);
-            _fieldNum = mysql_num_fields(_res);
+            _columnNum = mysql_num_fields(_res);
             
-            loadFields();
+            loadColumns();
             
             _affected = _rows;
             _usable = true;
@@ -87,13 +87,13 @@ class MySQLResult : Result
     /**
      * Loads field array
      */
-    protected void loadFields()
+    protected void loadColumns()
     {
         MYSQL_FIELD* field;
-        for (uint i = 0; i < _fieldNum; i++)
+        for (uint i = 0; i < _columnNum; i++)
         {
             field = mysql_fetch_field(_res);
-            _fields ~= to!(string)(field.name);
+            _columns ~= to!(string)(field.name);
         }
     }
     
@@ -146,14 +146,14 @@ class MySQLResult : Result
             throw new DatabaseException("Could not fetch row.", file, line);
         }
         
-        for(int i; i < _fieldNum; i++ ) {
+        for(int i; i < _columnNum; i++ ) {
             row ~= to!string(crow[i]);
         }
         
         // Sync
         mysql_data_seek(_res, cast(uint)_index);
         
-        return new Row(row, _fields);
+        return new Row(row, _columns);
     }
     
     
@@ -203,9 +203,9 @@ class MySQLResult : Result
      * Returns:
      *  Array of fields
      */
-    public override string[] fields() @property
+    public override string[] columns() @property
     {
-        return _fields;
+        return _columns;
     }
     
     /**

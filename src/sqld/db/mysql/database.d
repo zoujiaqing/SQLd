@@ -25,21 +25,16 @@ private alias toStringz c;
  * Represents MySQL database connection
  */
 class MySQL : Database
-{   
-    /**
-     * Connection details
-     */
-    protected string _user;
-    protected string _pass;
-    protected string _host;
-    protected string _db;
-    protected int    _port;
-    
-    
-    /**
-     * MySQL handle
-     */
-    protected MYSQL* _sql;
+{
+    protected
+    {
+        string _user;
+        string _pass;
+        string _host;
+        string _db;
+        int    _port;
+        MYSQL* _sql;
+    }
     
     
     /**
