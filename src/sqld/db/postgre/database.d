@@ -7,7 +7,8 @@ import sqld.base.database,
        sqld.uri,
        sqld.base.statement,
        sqld.c.postgre,
-       sqld.db.postgre.result;
+       sqld.db.postgre.result,
+       sqld.db.postgre.table;
 import std.string;
 
 /**
@@ -283,6 +284,17 @@ class Postgre : Database
     public override bool isError() @property
     {
         return this.error.number != 0;
+    }
+    
+    /**
+     * Returns table info
+     *
+     * Params:
+     *  table = Table name
+     */
+    public override PostgreTable tableInfo(string name)
+    {
+        return new PostgreTable(this, name);
     }
     
     /**

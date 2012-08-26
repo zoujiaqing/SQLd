@@ -13,6 +13,7 @@ import sqld.base.database,
        sqld.base.statement,
        sqld.c.mysql, 
        sqld.db.mysql.info,
+       sqld.db.mysql.table,
        sqld.db.mysql.result;
        
 import std.string : toStringz;
@@ -406,6 +407,17 @@ class MySQL : Database
     }
     
     /**
+     * Returns table info
+     *
+     * Params:
+     *  table = Table name
+     */
+    public override MySqlTable tableInfo(string name)
+    {
+        return new MySqlTable(this, name);
+    }
+    
+    /**
      * MYSQL connection handle
      *
      * Returns:
@@ -415,17 +427,5 @@ class MySQL : Database
     {
         return _sql;
     }
-    
-    /**
-     * Sets autocommit value
-     *
-     * Params:
-     *  ac = Autocommit value
-     */
-    public void autoCommit(bool ac) @property
-    {
-        mysql_autocommit(_sql, cast(int)ac);
-    }
-    
 }
 

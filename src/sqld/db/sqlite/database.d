@@ -12,7 +12,8 @@ import sqld.base.database,
        sqld.uri,
        sqld.base.statement,
        etc.c.sqlite3,
-       sqld.db.sqlite.result;
+       sqld.db.sqlite.result,
+       sqld.db.sqlite.table;
        
 import std.string    : toStringz, replace;
 import std.conv      : to;
@@ -295,6 +296,17 @@ class SQLite : Database
     public override bool isError() @property
     {
         return this.error.number != 0;
+    }
+    
+    /**
+     * Returns table info
+     *
+     * Params:
+     *  table = Table name
+     */
+    public override SqliteTable tableInfo(string name)
+    {
+        return new SqliteTable(this, name);
     }
     
     /**

@@ -1,17 +1,11 @@
 module sqld.db.sqlite.table;
 
 import sqld.all,
-       sqld.base.column;
+       sqld.base.column,
+       sqld.base.table;
 
-class SqliteTable
+class SqliteTable : Table 
 {
-    protected
-    {
-        string _name;
-        Database _db;
-        Column[] _columns;
-    }
-    
     /**
      * Creates new SqliteTable instance
      */
@@ -31,38 +25,28 @@ class SqliteTable
         
         foreach(row; res)
         {
-            _columns ~= new Column(row["name"], row["type"], row["dflt_value"]);
+            _columns ~= new Column(row["name"], parseType(row["type"]), row["dflt_value"]);
         }
     }
     
-    
-    /**
-     * Table columns
-     */
-    public Column[] columns() @property
+    protected ColumnType parseType(string type)
     {
-        return _columns;
-    }
-    
-    /**
-     * Returns: Column with specified index
-     */
-    public Column opIndex(int i)
-    {
-        return _columns[i];
-    }
-    
-    /**
-     * Returns: Column with specified index
-     */
-    public Column opIndex(string n)
-    {
-        foreach(c; _columns)
+        switch(type)
         {
-            if(c.name == n) {
-                return c;
-            } 
+            case "INTEGER":
+                return ColumnType.Integer;
+            break;
+            
+            case "VARCHAR":
+                return ColumnType.Varchar;
+            break;
+            
+            case "DATETIME":
+                return ColumnType.Date;
+            break;
+            
+            default:
+                return ColumnType.Unknown;
         }
-        throw new Exception("No column with name '"~n~"'");
     }
 }

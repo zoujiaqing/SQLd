@@ -7,11 +7,11 @@ class Column
     protected
     {
         string _name;
-        string _type;
+        ColumnType _type;
         string _default;
     }
     
-    public this(string name, string type, string defaultVal)
+    public this(string name, ColumnType type, string defaultVal)
     {
         _name = name;
         _type = type;
@@ -29,7 +29,7 @@ class Column
     /**
      * Column type
      */
-    public string type() @property
+    public ColumnType type() @property
     {
         return _type;
     }
@@ -44,6 +44,14 @@ class Column
     
     public override string toString()
     {
-        return to!string([_name, _type, _default]);
+        return to!string([_name, to!string(_type), _default]);
     }
+}
+
+enum ColumnType
+{
+    Unknown,
+    Varchar,
+    Date,
+    Integer
 }

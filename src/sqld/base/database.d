@@ -3,6 +3,7 @@ module sqld.base.database;
 import sqld.base.error,
        sqld.base.result,
        sqld.base.transaction,
+       sqld.base.table,
        sqld.uri,
        sqld.base.statement,
        sqld.db.mysql.database,
@@ -83,6 +84,14 @@ abstract class Database
      *  Escaped string
      */
     abstract public string escape(string str);
+    
+    /**
+     * Returns table info
+     *
+     * Params:
+     *  table = Table name
+     */
+    abstract public Table tableInfo(string table);
 
     /**
      * Current database instance

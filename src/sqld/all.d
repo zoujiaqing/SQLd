@@ -5,6 +5,8 @@ public import
      sqld.base.result,
      sqld.base.row,
      sqld.base.error,
+     sqld.base.column,
+     sqld.base.table,
      sqld.model;
      
 

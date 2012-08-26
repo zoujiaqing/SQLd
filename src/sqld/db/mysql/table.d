@@ -1,17 +1,13 @@
 module sqld.db.mysql.table;
 
 import sqld.all,
-       sqld.base.column;
+       sqld.base.column,
+       sqld.base.table;
 
-class MySqlTable
+import std.algorithm;
+
+class MySqlTable : Table
 {
-    protected
-    {
-        string _name;
-        Database _db;
-        Column[] _columns;
-    }
-    
     /**
      * Creates new MySqlTable instance
      */
@@ -24,45 +20,26 @@ class MySqlTable
     }
     
     protected void loadInfo()
-    {   
+    {
         auto res = _db.prepare("DESCRIBE ?;")
             .bindColumn(_name)
             .execute();
-        
+            
         foreach(row; res)
         {
-            _columns ~= new Column(row["Field"], row["Type"], row["Default"]);
+            _columns ~= new Column(row["Field"], parseType(row["Type"]), row["Default"]);
         }
     }
     
-    
-    /**
-     * Table columns
-     */
-    public Column[] columns() @property
+    protected ColumnType parseType(string type)
     {
-        return _columns;
-    }
-    
-    /**
-     * Returns: Column with specified index
-     */
-    public Column opIndex(int i)
-    {
-        return _columns[i];
-    }
-    
-    /**
-     * Returns: Column with specified index
-     */
-    public Column opIndex(string n)
-    {
-        foreach(c; _columns)
-        {
-            if(c.name == n) {
-                return c;
-            } 
-        }
-        throw new Exception("No column with name '"~n~"'");
+        if(type.startsWith("int"))
+            return ColumnType.Integer;
+        else if(type.startsWith("varchar"))
+            return ColumnType.Varchar;
+        else if(type.startsWith("date"))
+            return ColumnType.Date;
+        else
+            return ColumnType.Unknown;
     }
 }

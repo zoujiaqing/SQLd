@@ -1,17 +1,11 @@
 module sqld.db.postgre.table;
 
 import sqld.all,
-       sqld.base.column;
+       sqld.base.column,
+       sqld.base.table;
 
-class PostgreTable
-{
-    protected
-    {
-        string _name;
-        Database _db;
-        Column[] _columns;
-    }
-    
+class PostgreTable : Table
+{   
     /**
      * Creates new PostgreTable instance
      */
@@ -31,38 +25,28 @@ class PostgreTable
         
         foreach(row; res)
         {
-            _columns ~= new Column(row["column_name"], row["data_type"], row["column_default"]);
+            _columns ~= new Column(row["column_name"], parseType(row["data_type"]), row["column_default"]);
         }
     }
     
-    
-    /**
-     * Table columns
-     */
-    public Column[] columns() @property
+    protected ColumnType parseType(string type)
     {
-        return _columns;
-    }
-    
-    /**
-     * Returns: Column with specified index
-     */
-    public Column opIndex(int i)
-    {
-        return _columns[i];
-    }
-    
-    /**
-     * Returns: Column with specified index
-     */
-    public Column opIndex(string n)
-    {
-        foreach(c; _columns)
+        switch(type)
         {
-            if(c.name == n) {
-                return c;
-            } 
+            case "integer":
+                return ColumnType.Integer;
+            break;
+            
+            case "character":
+                return ColumnType.Varchar;
+            break;
+            
+            case "date":
+                return ColumnType.Date;
+            break;
+            
+            default:
+                return ColumnType.Unknown;
         }
-        throw new Exception("No column with name '"~n~"'");
     }
 }

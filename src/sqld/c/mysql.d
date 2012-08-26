@@ -16,7 +16,6 @@ version(Unix)
 
 //import core.stdc.config;
 
-__gshared:
 extern(System):
 struct MYSQL {};
 struct MYSQL_RES {};
