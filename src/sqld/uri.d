@@ -125,26 +125,9 @@ struct UriQuery
  * ---------
  */
 class Uri
-{
-    /**
-     * URI schemes
-     */
-    enum Scheme : string
-    {
-        Http     = "HTTP",
-        Https    = "HTTPS",
-        Ftp      = "FTP",
-        Ftps     = "FTPS",
-        Irc      = "IRC",
-        Smtp     = "SMTP",        
-        Unknown  = ""          
-    }
-    
-    alias Scheme this;
-    
+{   
     protected
-    {        
-        Scheme   _scheme;
+    {
         string   _rawscheme;
         string   _domain;
         ushort   _port;
@@ -201,37 +184,11 @@ class Uri
         i = uri.indexOf("://");
         if(i != -1)  
         {
-            _rawscheme = uri[0 .. i];
-            switch( _rawscheme )
-            {
-                case "http":
-                    _scheme = Scheme.Http;
-                    break;
-                case "https":
-                    _scheme = Scheme.Https;
-                    break;
-                case "ftp":
-                    _scheme = Scheme.Ftp;
-                    break;
-                case "ftps":
-                    _scheme = Scheme.Ftps;
-                    break;
-                case "irc":
-                    _scheme = Scheme.Irc;
-                    break;
-                case "smtp":
-                    _scheme = Scheme.Smtp;
-                    break;
-                default:
-                    _scheme = Scheme.Unknown;
-                    break;
-            }
-            
+            _rawscheme = uri[0 .. i];                        
             uri = uri[i + 3 .. $];
         } 
         else
         {
-            _scheme = Scheme.Unknown;
             //i = uri.indexOf(":");
         }
         
@@ -277,14 +234,6 @@ class Uri
             _domain = uri[0..i];
         }
         
-        if ( _port != 0 && _scheme == Scheme.Unknown )
-        {
-            getDefaultScheme();
-        }
-        else if ( _port == 0 && _scheme != Scheme.Unknown )
-        {
-            getDefaultPort();
-        }
             
         uri = uri[i .. $];   
         
@@ -331,68 +280,9 @@ class Uri
         }
                 
     }
+        
     
-    /**
-     * Gets default scheme depending on port
-     */
-    protected void getDefaultScheme()
-    {
-        switch(_port)
-        {
-            case 80:
-            case 8080:
-                _scheme = Scheme.Http;
-                break;
-            case 443:
-                _scheme = Scheme.Https;
-                break;
-            case 21:
-                _scheme = Scheme.Ftp;
-                break;
-            case 990:
-                _scheme = Scheme.Ftps;
-                break;
-            case 6667:
-                _scheme = Scheme.Irc;
-                break;
-            case 25:
-                _scheme = Scheme.Smtp;
-                break;
-            default:
-                _scheme = Scheme.Unknown;
-                break;
-        }
-    }
-    
-    
-    /**
-     * Gets default port depending on scheme
-     */
-    protected void getDefaultPort()
-    {
-        final switch (cast(string) _scheme)
-        {
-            case Scheme.Http:
-                _port = 80;
-                break;
-            case Scheme.Https:
-                _port = 443;
-                break;
-            case Scheme.Ftp:
-                _port = 21;
-                break;
-            case Scheme.Ftps:
-                _port = 990;
-                break;
-            case Scheme.Irc:
-                _port = 6667;
-                break;
-            case Scheme.Smtp:
-                _port = 25;
-                break;
-        }
-    }
-    
+        
     /**
      * Resets Uri Data
      * 
@@ -406,7 +296,6 @@ class Uri
      */
     void reset()
     {
-        _scheme = Scheme.Unknown;
         _port = 0;
         _domain = _domain.init;
         _path = _path.init;
@@ -430,7 +319,7 @@ class Uri
     {
         string uri;
         
-        uri ~= cast(string)_scheme ~ "://";
+        uri ~= _rawscheme ~ "://";
         
         if(_user)
         {
@@ -456,16 +345,7 @@ class Uri
         
         return uri;
     }
-    
-    
-    /**
-     * Returns: Uri scheme
-     */
-    @property Scheme scheme() const
-    {
-        return _scheme;
-    }
-    
+        
     /**
      * Returns: Raw scheme
      */
@@ -627,11 +507,7 @@ class Uri
 unittest
 {   
     auto uri = new Uri("http://user:pass@domain.com:80/path/a?q=query#fragment");
-    
-    assert(uri.scheme() == uri.Http);
-    assert(uri.scheme() == uri.Scheme.Http);
-    assert(uri.scheme() == Uri.Scheme.Http);
-    
+        
     assert(uri.host == "domain.com");
     assert(uri.port == 80);
     assert(uri.user == "user");
@@ -643,30 +519,21 @@ unittest
     
     uri.parse("http://google.com");
     assert(uri.port() == 80);
-    assert(uri.scheme() == uri.Http);
     
     uri.parse("google.com", 80);
-    assert(uri.scheme() == uri.Http);
     
     uri.parse("google.com", 8080);
-    assert(uri.scheme() == uri.Http);
     
     uri.parse("publicftp.com", 21);
-    assert(uri.scheme() == uri.Ftp);
     
     uri.parse("ftp://google.com");
-    assert(uri.scheme() == uri.Ftp, uri.scheme);
     
     uri.parse("smtp://gmail.com");
-    assert(uri.scheme() == uri.Smtp);
     assert(uri.host() == "gmail.com");
     
     uri.parse("http://google.com:666");
-    assert(uri.scheme() == uri.Http);
     assert(uri.port() == 666);
-    
-    assert(Uri.parseUri("http://google.com").scheme() == Uri.Http);
-    
+        
     UriQuery query = UriQuery();
     query.add(QueryParam("key", "value"));
     query.add(QueryParam("key1" ,"value1"));
