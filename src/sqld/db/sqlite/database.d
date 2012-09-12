@@ -9,22 +9,25 @@ module sqld.db.sqlite.database;
 import sqld.base.database,
        sqld.base.error,
        sqld.base.transaction,
-       sqld.uri,
-       sqld.base.statement,
+       sqld.uri,       
        etc.c.sqlite3,
+	   sqld.db.sqlite.statement,
        sqld.db.sqlite.result,
        sqld.db.sqlite.table;
        
 import std.string    : toStringz, replace;
 import std.conv      : to;
 
-version(Windows)
+version(SQLD_LINK_LIB)
 {
-    pragma(lib, "sqlite3.lib");
-}
-version(Unix)
-{
-    pragma(lib, "sqlite3.so")
+	version(Windows)
+	{
+	    pragma(lib, "sqlite3.lib");
+	}
+	version(Unix)
+	{
+	    pragma(lib, "sqlite3.so")
+	}
 }
 
 private alias toStringz c;
@@ -208,9 +211,8 @@ class SQLite : Database
         }
         
         string ret = str;
-        ret = ret.replace(`\`, `\\`);
-        ret = ret.replace(`'`, `\'`);
-        ret = ret.replace(`"`, `\"`);
+        ret = ret.replace(`'`, `''`);
+        ret = ret.replace(`"`, `""`);
         return ret;
     }
     
@@ -223,13 +225,13 @@ class SQLite : Database
      * Returns:
      *  New statement
      */
-    public override Statement prepare(string query)
+    public override SQLiteStatement prepare(string query)
     {
         if(_sql is null) {
             throw new ConnectionException("Cannot prepare statement without connecting to database");
         }
         
-        return new Statement(this, query);
+        return new SQLiteStatement(this, query);
     }
     
     /**

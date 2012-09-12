@@ -9,17 +9,25 @@ public import
      sqld.base.table,
      sqld.model;
      
-
+/*version(SQLD_MYSQL)
+{*/
 public import 
      sqld.db.mysql.database,
      sqld.db.mysql.info,
      sqld.db.mysql.result;
-     
+//}
+ 
+/*version(SQLD_SQLITE)
+{*/	
 public import      
      sqld.db.sqlite.database,
      sqld.db.sqlite.result;
+//}
 
 
+/*version(SQLD_POSTGRE)
+{*/
 public import 
      sqld.db.postgre.database,
      sqld.db.postgre.result;
+//}

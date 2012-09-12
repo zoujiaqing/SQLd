@@ -10,8 +10,8 @@ import sqld.base.database,
        sqld.base.error,
        sqld.base.transaction,
        sqld.uri,
-       sqld.base.statement,
-       sqld.c.mysql, 
+       sqld.c.mysql,
+	   sqld.db.mysql.statement,
        sqld.db.mysql.info,
        sqld.db.mysql.table,
        sqld.db.mysql.result;
@@ -169,7 +169,7 @@ class MySQL : Database
     
     public ~this()
     {
-        mysql_close(_sql);
+        //close();
     }
     
     
@@ -194,7 +194,7 @@ class MySQL : Database
     {
         _sql = mysql_init(null);
         
-        if(_sql == null) {
+        if(_sql is null) {
             throw new ConnectionException("Could not init mysql instance");
         }
         
@@ -206,12 +206,11 @@ class MySQL : Database
                 _port,
                 null, 0);
         
-        if(_sql == null)
+        if(_sql is null)
         {
             throw new DatabaseException("Could not connect to database");
         }
         
-        execute("SET NAMES `utf8`");
         return this;
     }
     
@@ -231,7 +230,10 @@ class MySQL : Database
      */
     public override Database close()
     {
-        mysql_close(_sql);
+        if(_sql != null) {
+            mysql_close(_sql);
+            _sql = null;
+        }
         
         return this;
     }
@@ -329,13 +331,13 @@ class MySQL : Database
      * Returns:
      *  New statement
      */
-    public override Statement prepare(string query)
+    public override MySQLStatement prepare(string query)
     {
         if(_sql is null) {
             throw new ConnectionException("Cannot prepare statement without connecting to database");
         }
         
-        return new Statement(this, query);
+        return new MySQLStatement(this, query);
     }
     
     /**

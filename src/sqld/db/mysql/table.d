@@ -39,6 +39,10 @@ class MySqlTable : Table
             return ColumnType.Varchar;
         else if(type.startsWith("date"))
             return ColumnType.Date;
+		else if(type == "tinyint(1)")
+			return ColumnType.Bool;
+		else if(type == "float")
+			return ColumnType.Float;
         else
             return ColumnType.Unknown;
     }

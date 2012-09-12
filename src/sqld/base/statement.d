@@ -28,8 +28,11 @@ class Statement
         _query = query;
         _db = db;
     }
+	
+	abstract public string wrapColumn(string s);
+	abstract public string wrapValue(string s);
     
-    /**
+	/**
      * Binds column
      *
      * Params:
@@ -41,7 +44,10 @@ class Statement
     public self bindColumn(T)(T _value)
     {
         string value = to!string(_value);
-        value = _db.escape(value);
+		
+		static if(isSomeString!T) {
+            value = wrapColumn(_db.escape(value));
+        }
         
         _query = _query.replaceFirst("?", value);
         
@@ -60,8 +66,13 @@ class Statement
      */
     public self bindColumn(T)(string name, T _value)
     {
-        string value = to!string(_value);
-        _query = _query.replace(name, _db.escape(value));
+		string value = to!string(_value);
+		
+		static if(isSomeString!T) {
+            value = wrapColumn(_db.escape(value));
+		}
+		
+        _query = _query.replace(name, value);
         
         return this;
     }
@@ -78,12 +89,11 @@ class Statement
     public self bindValue(T)(T _value)
     {
         string value = to!string(_value);
-        value = _db.escape(value);
-        
-        static if(isSomeString!T) {
-            value = "'"~value~"'";
-        }
-        
+		
+		static if(isSomeString!T) {
+            value = wrapValue(_db.escape(value));
+		}
+		        
         _query = _query.replaceFirst("?", value);
         
         return this;
@@ -100,9 +110,14 @@ class Statement
      *  Self
      */
     public self bindValue(T)(string name, T _value)
-    {
-        string value = to!string(_value);
-        _query = _query.replace(name, _db.escape(value));
+    {	
+		string value = to!string(_value);
+		
+		static if(isSomeString!T) {
+            value = wrapValue(_db.escape(_value));
+		}
+		
+		_query = _query.replace(name, value);
         
         return this;
     }

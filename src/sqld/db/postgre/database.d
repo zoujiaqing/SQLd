@@ -5,8 +5,8 @@ import sqld.base.database,
        sqld.base.result,
        sqld.base.transaction,
        sqld.uri,
-       sqld.base.statement,
        sqld.c.postgre,
+	   sqld.db.postgre.statement,
        sqld.db.postgre.result,
        sqld.db.postgre.table;
 import std.string;
@@ -143,6 +143,7 @@ class Postgre : Database
     public override Database close()
     {
         PQfinish(_sql);
+        
         return cast(Database)this;
     }
     
@@ -232,13 +233,13 @@ class Postgre : Database
      * Returns:
      *  New statement
      */
-    public override Statement prepare(string query)
+    public override PostgreStatement prepare(string query)
     {
         if(_sql is null) {
             throw new ConnectionException("Cannot prepare statement without connecting to database");
         }
         
-        return new Statement(this, query);
+        return new PostgreStatement(this, query);
     }
     
     /**

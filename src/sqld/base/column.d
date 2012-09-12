@@ -53,5 +53,7 @@ enum ColumnType
     Unknown,
     Varchar,
     Date,
+	Bool,
+	Float,
     Integer
 }

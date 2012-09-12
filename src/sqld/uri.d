@@ -137,7 +137,7 @@ class Uri
         Ftps     = "FTPS",
         Irc      = "IRC",
         Smtp     = "SMTP",        
-        Unknown  = "",          
+        Unknown  = ""          
     }
     
     alias Scheme this;

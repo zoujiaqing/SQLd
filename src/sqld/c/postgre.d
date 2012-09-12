@@ -1,6 +1,9 @@
 module sqld.c.postgre;
 
-pragma(lib, "libpq");
+version(SQLD_LINK_LIB)
+{
+	pragma(lib, "libpq");
+}
 
 extern(C):
 struct PGconn {}

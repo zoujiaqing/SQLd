@@ -19,8 +19,8 @@ class PostgreTable : Table
     
     protected void loadInfo()
     {   
-        auto res = _db.prepare("SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = '?' ORDER BY ordinal_position ASC;")
-            .bindColumn(_name)
+        auto res = _db.prepare("SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = ? ORDER BY ordinal_position ASC;")
+            .bindValue(_name)
             .execute();
         
         foreach(row; res)
@@ -44,6 +44,14 @@ class PostgreTable : Table
             case "date":
                 return ColumnType.Date;
             break;
+			
+			case "boolean":
+				return ColumnType.Bool;
+			break;
+			
+			case "real":
+				return ColumnType.Float;
+			break;
             
             default:
                 return ColumnType.Unknown;

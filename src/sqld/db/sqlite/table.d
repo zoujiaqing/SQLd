@@ -18,7 +18,7 @@ class SqliteTable : Table
     }
     
     protected void loadInfo()
-    {   
+    {
         auto res = _db.prepare("PRAGMA table_info(?);")
             .bindColumn(_name)
             .execute();
@@ -44,7 +44,15 @@ class SqliteTable : Table
             case "DATETIME":
                 return ColumnType.Date;
             break;
-            
+				
+			case "BOOL":
+				return ColumnType.Bool;
+			break;
+			
+			case "FLOAT":
+				return ColumnType.Float;
+			break;	
+				
             default:
                 return ColumnType.Unknown;
         }

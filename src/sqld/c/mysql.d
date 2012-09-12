@@ -4,18 +4,20 @@
  */
 module sqld.c.mysql;
 
-version(Windows)
+version(SQLD_LINK_LIB)
 {
-    pragma(lib, "libmysql");
-}
-version(Unix)
-{
-    pragma(lib, "mysql")
+	version(Windows)
+	{
+	    pragma(lib, "libmysql");
+	}
+	version(Unix)
+	{
+	    pragma(lib, "mysql")
+	}
 }
 
 
 //import core.stdc.config;
-
 extern(System):
 struct MYSQL {};
 struct MYSQL_RES {};
