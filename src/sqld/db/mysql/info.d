@@ -45,7 +45,7 @@ struct MySQLInfo
      * Returns:
      *  Client version in specified type
      */
-    public T clientVersion(T)()
+    public T clientVersion(T = string)()
         if( is(T : string) || is(T : int) )
     {
         static if( is(T : string) )

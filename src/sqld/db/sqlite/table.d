@@ -25,7 +25,7 @@ class SqliteTable : Table
         
         foreach(row; res)
         {
-            _columns ~= new Column(row["name"], parseType(row["type"]), row["dflt_value"]);
+            _columns ~= new Column(row["name"], parseType(row["type"]), parseDefault(row["dflt_value"]));
         }
     }
     
@@ -51,10 +51,23 @@ class SqliteTable : Table
 			
 			case "FLOAT":
 				return ColumnType.Float;
-			break;	
+			break;
+			
+			case "TEXT":
+				return ColumnType.Text;
+			break;
 				
             default:
                 return ColumnType.Unknown;
         }
     }
+	
+	protected string parseDefault(string s)
+	{
+		if(s.length > 2 && s[0] == '\'' && s[$-1] == '\'') {
+			return s[1..$-1];
+		} else {
+			return s;
+		}
+	}
 }

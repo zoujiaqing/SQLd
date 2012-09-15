@@ -25,7 +25,7 @@ private alias toStringz c;
 /**
  * Represents MySQL database connection
  */
-class MySQL : Database
+final class MySQL : Database
 {
     protected
     {

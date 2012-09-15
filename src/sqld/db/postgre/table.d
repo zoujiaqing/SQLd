@@ -3,6 +3,7 @@ module sqld.db.postgre.table;
 import sqld.all,
        sqld.base.column,
        sqld.base.table;
+import std.string;
 
 class PostgreTable : Table
 {   
@@ -25,7 +26,7 @@ class PostgreTable : Table
         
         foreach(row; res)
         {
-            _columns ~= new Column(row["column_name"], parseType(row["data_type"]), row["column_default"]);
+            _columns ~= new Column(row["column_name"], parseType(row["data_type"]), parseDefault(row["column_default"]));
         }
     }
     
@@ -53,8 +54,33 @@ class PostgreTable : Table
 				return ColumnType.Float;
 			break;
             
+			case "text":
+				return ColumnType.Text;
+			break;
+				
             default:
                 return ColumnType.Unknown;
         }
     }
+	
+	protected string parseDefault(string s)
+	{
+		if(s.length < 1) return s;
+		if(s[$-1] == ')') return s;
+		
+		size_t o = s.lastIndexOf("::");
+		
+		if(o > 0 && o < s.length) {
+			s = s[0..o];
+		}
+		
+		if(s.length > 2)
+		{
+			if(s[0] == '\'' && s[$-1] == '\'') {
+				s = s[1..$-1];
+			}
+		}
+		
+		return s;
+	}
 }

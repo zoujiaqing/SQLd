@@ -29,7 +29,7 @@ class SQLiteStatement : Statement
 	 * Returns:
 	 *  Wrapped column name
 	 */
-	public string wrapColumn(string s)
+	public override string wrapColumn(string s)
 	{
 		return `"` ~ s ~ `"`;
 	}
@@ -43,7 +43,7 @@ class SQLiteStatement : Statement
 	 * Returns:
 	 *  Wrapped value
 	 */
-	public string wrapValue(string s)
+	public override string wrapValue(string s)
 	{
 		return "'" ~ s ~ "'";
 	}

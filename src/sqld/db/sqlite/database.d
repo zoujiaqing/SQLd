@@ -35,7 +35,7 @@ private alias toStringz c;
 /**
  * Represents SQLite database connection
  */
-class SQLite : Database
+final class SQLite : Database
 {   
     /**
      * Database file
@@ -205,11 +205,7 @@ class SQLite : Database
      *  Escaped string
      */
     public override string escape(string str)
-    {
-        if(_sql is null) {
-            throw new ConnectionException("Cannot escape string without connecting to database");
-        }
-        
+    {        
         string ret = str;
         ret = ret.replace(`'`, `''`);
         ret = ret.replace(`"`, `""`);

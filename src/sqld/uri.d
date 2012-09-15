@@ -267,8 +267,7 @@ class Uri
             _path = "/";
         }
     }
-    
-    // TODO: Parse to Query
+	
     void parseQuery()
     {
         auto parts = _rawquery.split("&");
@@ -515,21 +514,7 @@ unittest
     assert(uri.path == "/path/a");
     assert(uri.rawquery == "q=query");
     assert(uri.query["q"] == "query");
-    assert(uri.fragment == "fragment");   
-    
-    uri.parse("http://google.com");
-    assert(uri.port() == 80);
-    
-    uri.parse("google.com", 80);
-    
-    uri.parse("google.com", 8080);
-    
-    uri.parse("publicftp.com", 21);
-    
-    uri.parse("ftp://google.com");
-    
-    uri.parse("smtp://gmail.com");
-    assert(uri.host() == "gmail.com");
+    assert(uri.fragment == "fragment");
     
     uri.parse("http://google.com:666");
     assert(uri.port() == 666);

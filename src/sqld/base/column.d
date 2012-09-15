@@ -1,6 +1,7 @@
 module sqld.base.column;
 
 import std.conv;
+import sqld.base.cell;
 
 class Column
 {
@@ -8,14 +9,14 @@ class Column
     {
         string _name;
         ColumnType _type;
-        string _default;
+        Cell _default;
     }
     
     public this(string name, ColumnType type, string defaultVal)
     {
         _name = name;
         _type = type;
-        _default = defaultVal;
+        _default = new Cell(defaultVal);
     }
     
     /**
@@ -37,14 +38,14 @@ class Column
     /**
      * Column default value
      */
-    public string defaultValue() @property
+    public Cell defaultValue() @property
     {
         return _default;
     }
     
     public override string toString()
     {
-        return to!string([_name, to!string(_type), _default]);
+        return to!string([_name, to!string(_type), _default.value]);
     }
 }
 
@@ -55,5 +56,6 @@ enum ColumnType
     Date,
 	Bool,
 	Float,
+	Text,
     Integer
 }

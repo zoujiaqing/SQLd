@@ -103,7 +103,6 @@ class PostgreResult : Result
             row ~= to!string(PQgetvalue(_res, _index, i)).stripRight();
         }
         
-        
         return new Row(row, _columns);
     }
     

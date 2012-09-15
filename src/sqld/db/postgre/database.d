@@ -14,7 +14,7 @@ import std.string;
 /**
  * Represents PostgreSQL database connection
  */
-class Postgre : Database
+final class Postgre : Database
 {
     protected
     {

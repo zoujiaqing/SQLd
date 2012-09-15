@@ -1,6 +1,7 @@
 module sqld.base.row;
 
-import std.conv      : to, ConvException;
+import sqld.base.cell;
+import std.conv      : to, parse, ConvException;
 
 /**
  * Represents table row
@@ -15,7 +16,7 @@ class Row
     /**
      * Row data
      */
-    protected string[] _data;
+    protected Cell[] _data;
     
     
     /**
@@ -25,12 +26,11 @@ class Row
      *  data = Row data
      */
     this(string[] data, string[] columns)
-    {   
-        for(int i; i < columns.length; i++)
-        {
-            _data = data;
-            _columns = columns;
-        }
+    {
+        foreach(d; data) {
+			_data ~= new Cell(d);
+		}
+        _columns = columns;
     }
     
     /**
@@ -40,9 +40,9 @@ class Row
      *  Field name
      * 
      * Returns:
-     *  Row value
+     *  Cell value
      */
-    public string opIndex(string name)
+    public Cell opIndex(string name)
     {
         for(int i; i < _columns.length; i++)
         {
@@ -59,9 +59,9 @@ class Row
      *  Field id
      * 
      * Returns:
-     *  Row value
+     *  Cell value
      */
-    public string opIndex(uint i)
+    public Cell opIndex(uint i)
     {
         return _data[i];
     }
@@ -100,7 +100,7 @@ class Row
     /// ditto
     alias columns fields;
     
-    public int opApply( int delegate(string name, string value) dg )
+    /*public int opApply( int delegate(string name, string value) dg )
     {
         int result;
         
@@ -112,10 +112,10 @@ class Row
         }
         
         return result;
-    }
+    }*/
     
     /**
-     * Returns: associative array that represents row
+     * Returns: Associative array that represents row
      */
     public string[string] toAssocArray()
     {
@@ -128,9 +128,9 @@ class Row
     }
     
     /**
-     * Returns: associative array that represents row
+     * Returns: Array that represents row
      */
-    public string[] toArray()
+    public Cell[] toArray()
     {
         return _data;
     }

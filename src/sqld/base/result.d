@@ -76,7 +76,7 @@ class Result
     {
         if(isValid) {
             auto r = fetch();
-            return to!T(r[0]);
+            return to!T(r[0].value);
         } else {
             throw new DatabaseException("Cannot fetch invalid result");
         }

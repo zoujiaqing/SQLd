@@ -43,6 +43,8 @@ class MySqlTable : Table
 			return ColumnType.Bool;
 		else if(type == "float")
 			return ColumnType.Float;
+		else if(type == "text")
+			return ColumnType.Text;
         else
             return ColumnType.Unknown;
     }
