@@ -100,7 +100,7 @@ class Row
     /// ditto
     alias columns fields;
     
-    /*public int opApply( int delegate(string name, string value) dg )
+    public int opApply( int delegate(string name, Cell value) dg )
     {
         int result;
         
@@ -112,7 +112,7 @@ class Row
         }
         
         return result;
-    }*/
+    }
     
     /**
      * Returns: Associative array that represents row

@@ -238,19 +238,3 @@ class MySQLResult : Result
         return _affected;
     }
 }
-
-class MySQLCell
-{
-	protected string value;
-	alias value this;
-	
-	this(string value)
-	{
-		this.value = value;
-	}
-	
-	public bool toBool()
-	{
-		return (value == "1");
-	}
-}
