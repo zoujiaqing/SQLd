@@ -33,7 +33,23 @@ class Statement
 	
 	abstract public string wrapColumn(string s);
 	abstract public string wrapValue(string s);
-     
+    
+	/**
+     * Binds column
+     *
+     * Params:
+     *  value = Value to bind
+     *
+     * Returns:
+     *  Self
+     */
+    public self bindColumn(T)(T _value)
+    {
+        _query = _query.replaceFirst("?", serialize(_value, &wrapColumn));
+        
+        return this;
+    }
+    
     /**
      * Binds column
      * 
@@ -91,7 +107,22 @@ class Statement
         auto r = regex(name~`(?=\W)`);
         _query = std.regex.replace(_query, r, serialize(_value, &wrapColumn));
     }
-
+    
+    /**
+     * Binds value
+     *
+     * Params:
+     *  value = Value to bind
+     *
+     * Returns:
+     *  Self
+     */
+    public self bindValue(T)(T _value)
+    {	        
+        _query = _query.replaceFirst("?", serialize(_value, &wrapValue));
+        
+        return this;
+    }
     
     /**
      * Binds value
