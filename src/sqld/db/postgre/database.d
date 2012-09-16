@@ -96,6 +96,11 @@ final class Postgre : Database
         Database.instance = this;   
     }
     
+    protected ~this()
+    {
+        close();
+    }
+    
     
     /**
      * Connects to database
@@ -140,11 +145,15 @@ final class Postgre : Database
      * Returns:
      *  Postgre Database
      */
-    public override Database close()
+    public override Postgre close()
     {
-        PQfinish(_sql);
+        if(_sql !is null)
+        {
+            PQfinish(_sql);
+            _sql = null;
+        }
         
-        return cast(Database)this;
+        return this;
     }
     
     
@@ -240,6 +249,25 @@ final class Postgre : Database
         }
         
         return new PostgreStatement(this, query);
+    }
+    
+    /**
+     * Checks if connection is estabilished
+     *
+     * Returns:
+     *  True if connected to database, false otherwise
+     */
+    public bool connected() @property
+    {
+        if(_sql is null)
+            return false;
+        
+        try {
+            query("SELECT 1+1;");
+            return true;
+        } catch(Exception e) {
+            return false;
+        }
     }
     
     /**

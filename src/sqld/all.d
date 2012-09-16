@@ -6,12 +6,11 @@ public import
      sqld.base.row,
      sqld.base.error,
      sqld.base.column,
-     sqld.base.table,
-     sqld.model;
+     sqld.base.table;
      
 /*version(SQLD_MYSQL)
 {*/
-public import 
+public import
      sqld.db.mysql.database,
      sqld.db.mysql.info,
      sqld.db.mysql.result;
@@ -19,7 +18,7 @@ public import
  
 /*version(SQLD_SQLITE)
 {*/	
-public import      
+public import
      sqld.db.sqlite.database,
      sqld.db.sqlite.result;
 //}

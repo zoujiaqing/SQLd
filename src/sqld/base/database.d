@@ -67,6 +67,11 @@ abstract class Database
     abstract Statement prepare(string query);
     
     /**
+     * Checks if connection is alive
+     */
+    abstract bool connected() @property;
+    
+    /**
      * Begins transaction
      *
      * Returns:

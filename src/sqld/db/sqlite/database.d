@@ -89,7 +89,7 @@ final class SQLite : Database
     
     public ~this()
     {
-        sqlite3_close(_sql);
+        close();
     } 
     
     
@@ -138,7 +138,11 @@ final class SQLite : Database
      */
     public override Database close()
     {
-        sqlite3_close(_sql);
+        if(_sql !is null)
+        {
+            sqlite3_close(_sql);
+            _sql = null;
+        }
         
         return this;
     }
@@ -264,9 +268,9 @@ final class SQLite : Database
      * Returns:
      *  True if connected to database, false otherwise
      */
-    public bool isConnected() @property
+    public bool connected() @property
     {
-        return _sql == null;
+        return _sql != null;
     }
     
     /**

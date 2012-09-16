@@ -38,7 +38,6 @@ const(char)* PQcmdTuples(PGresult*);
 int PQgetlength(const PGresult *res, int row_number, int column_number);
 int PQgetisnull(const PGresult *res, int row_number, int column_number);
 
-
 enum CONNECTION_OK = 0;
 enum PGRES_COMMAND_OK = 1;
 enum PGRES_TUPLES_OK = 2;

@@ -147,7 +147,7 @@ final class MySQL : Database
      *
      * Examples:
      * ---
-     * auto uri = Uri("mysql://user:pass@localhost/");
+     * auto uri = "mysql://user:pass@localhost/";
      * auto db = new MySQL(uri);
      * db.open();
      * // ...
@@ -169,7 +169,7 @@ final class MySQL : Database
     
     public ~this()
     {
-        //close();
+        close();
     }
     
     
@@ -365,9 +365,9 @@ final class MySQL : Database
      * Returns:
      *  True if connected to database, false otherwise
      */
-    public bool isConnected() @property
+    public bool connected() @property
     {
-        return _sql == null;
+        return (_sql != null) && (mysql_ping(_sql) == 0);
     }
     
     /**

@@ -98,5 +98,7 @@ uint mysql_real_escape_string(MYSQL*, char*, const(char)*, uint);
 
 void mysql_free_result(MYSQL_RES*);
 
+int mysql_ping(MYSQL *mysql);
+
 uint mysql_commit(MYSQL *mysql);
 const(char)* mysql_get_host_info(MYSQL*);
