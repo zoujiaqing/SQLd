@@ -52,7 +52,7 @@ abstract class Database
      *  Result
      */
     abstract Result execute(string query, string file = __FILE__, uint line = __LINE__);
-    /// ditto
+    /// ditto	
     alias execute query;
     
     /**

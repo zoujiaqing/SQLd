@@ -3,6 +3,7 @@ module sqld.base.cell;
 import std.datetime;
 import std.conv;
 import std.string;
+import std.math;
 
 /**
  * Represents database cell
@@ -85,6 +86,52 @@ class Cell
 	}
 	
 	/**
+	 * Time value of cell
+	 * 
+	 * Throws:
+	 *  DateTimeException if format is not correct
+	 * 
+	 * Returns:
+	 *  Time value
+	 */
+	public TimeOfDay getTime()
+	{
+		return parseTime(value);
+	}
+	
+	/**
+	 * Date and time value of cell
+	 * 
+	 * Throws:
+	 *  DateTimeException if format is not correct
+	 * 
+	 * Returns:
+	 *  DateTime value
+	 */
+	public DateTime getDateTime()
+	{
+		string[] parts = value.split(" ");
+		TimeOfDay time;
+		Date date;
+		
+		if(parts.length >= 2)
+		{
+			date = Date.fromISOExtString(parts[0]);
+			time = parseTime(parts[1]);
+		}
+		else
+		{
+			parts = value.split("-");
+			if(parts.length >= 3)
+			{
+				date = Date.fromISOExtString(parts[0..3].join("-"));
+			}			
+		}
+		
+		return DateTime(date, time);
+	}
+	
+	/**
 	 * String value of cell
 	 * 
 	 * Returns:
@@ -97,11 +144,32 @@ class Cell
 	/// ditto
 	alias getString toString;
 	
-	mixin(CellGen!float("Float"));
+	//mixin(CellGen!float("Float"));
 	mixin(CellGen!bool("Bool"));
 	mixin(CellGen!int("Int"));
 	mixin(CellGen!string("String"));	
 	mixin(CellGen!Date("Date"));
+	mixin(CellGen!TimeOfDay("Time"));
+	mixin(CellGen!DateTime("DateTime"));
+	
+	bool opEquals(float v)
+	{
+		return fabs(getFloat() - v) < 0.0000001f;
+	}
+
+	float opCast(U)() if(is(U == float))
+	{
+		return getFloat();
+	}
+	
+	protected TimeOfDay parseTime(string v)
+	{
+		string[] parts = v.split(":");
+		if(parts.length <= 2)
+			v ~= ":00";
+		
+		return TimeOfDay.fromISOExtString(v);
+	}
 }
 
 package string CellGen(T)(string name)

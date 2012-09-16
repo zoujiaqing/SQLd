@@ -38,6 +38,7 @@ class MySQLResult : Result
     {
         MYSQL* _db;
         MYSQL_RES* _res;
+        Row row;
         bool _usable;
         
         string[] _columns;
@@ -69,6 +70,8 @@ class MySQLResult : Result
             
             _affected = _rows;
             _usable = true;
+			
+			loadRow();
         }
         else
         {
@@ -137,6 +140,7 @@ class MySQLResult : Result
      */
     public override Row fetch(string file = __FILE__, uint line = __LINE__)
     {
+		return row;/*
         MYSQL_ROW crow;
         string[] row;
         
@@ -153,7 +157,7 @@ class MySQLResult : Result
         // Sync
         mysql_data_seek(_res, cast(uint)_index);
         
-        return new Row(row, _columns);
+        return new Row(row, _columns);*/
     }
     
     
@@ -172,10 +176,33 @@ class MySQLResult : Result
             return false;
         }
         
-        mysql_data_seek(_res, cast(uint)_index);
+        /*mysql_data_seek(_res, cast(uint)_index);*/
+		
+		loadRow();
         
         return true;
     }
+	
+	protected void loadRow()
+	{
+		MYSQL_ROW crow;
+        string[] _row;
+        
+        crow = mysql_fetch_row(_res);
+        
+        if(crow is null) {
+            throw new DatabaseException("Could not fetch row.");
+        }
+        
+        for(int i; i < _columnNum; i++ ) {
+            _row ~= to!string(crow[i]);
+        }
+        
+        /*// Sync
+        mysql_data_seek(_res, cast(uint)_index);*/
+        
+        row = new Row(_row, _columns);
+	}
     
     
     /**
