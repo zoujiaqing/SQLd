@@ -7,14 +7,14 @@
 module sqld.db.mysql.database;
 
 import sqld.base.database,
-       sqld.base.error,
        sqld.base.transaction,
        sqld.uri,
        sqld.c.mysql,
 	   sqld.db.mysql.statement,
        sqld.db.mysql.info,
        sqld.db.mysql.table,
-       sqld.db.mysql.result;
+       sqld.db.mysql.result,
+       sqld.db.mysql.error;
        
 import std.string : toStringz;
 import std.conv   : to;
@@ -25,7 +25,7 @@ private alias toStringz c;
 /**
  * Represents MySQL database connection
  */
-final class MySQL : Database
+final class MySQLDatabase : Database
 {
     protected
     {
@@ -35,6 +35,7 @@ final class MySQL : Database
         string _db;
         int    _port;
         MYSQL* _sql;
+        MySQLDatabaseError _error;
     }
     
     
@@ -164,6 +165,7 @@ final class MySQL : Database
     
     protected this()
     {
+        _error = new MySQLDatabaseError(0);
         Database.instance = this;
     }
     
@@ -198,7 +200,7 @@ final class MySQL : Database
             throw new ConnectionException("Could not init mysql instance");
         }
         
-        _sql = mysql_real_connect(_sql,
+       _sql = mysql_real_connect(_sql,
                 _host.c,
                 _user.c,
                 _pass.c,
@@ -208,7 +210,8 @@ final class MySQL : Database
         
         if(_sql is null)
         {
-            throw new DatabaseException("Could not connect to database");
+            _error.update(2002);
+            //throw new DatabaseException("Could not connect to database");
         }
         
         return this;
@@ -389,12 +392,14 @@ final class MySQL : Database
      * Returns:
      *  DatabaseError Last error
      */
-    public override DatabaseError error() @property
-    {
-        int    no  = mysql_errno(_sql);
-        string msg = to!string(mysql_error(_sql));
-        
-        return new DatabaseError(no, msg);
+    public override MySQLDatabaseError error() @property
+    {   
+        if(_error.code == DatabaseErrorCode.NoError)
+        {
+            _error.update(mysql_errno(_sql));
+        }
+            
+        return _error;
     }
     
     /**
@@ -405,7 +410,7 @@ final class MySQL : Database
      */
     public override bool isError() @property
     {
-        return this.error.number != 0;
+        return this.error.code != DatabaseErrorCode.NoError;
     }
     
     /**

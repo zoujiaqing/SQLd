@@ -48,7 +48,22 @@ class QueryException : DatabaseException
     this(string txt = "", string file = __FILE__, int line = __LINE__)
     {
         super(txt, file, line);
-    }
+    }    
+}
+
+enum DatabaseErrorCode
+{
+    NoError,
+    
+    SocketError,
+    ConnectionError,
+    ServerError,
+        
+    OutOfSync,
+    InvalidQuery,
+    InvalidData,
+    
+    Unknown = 1024
 }
 
 
@@ -66,24 +81,84 @@ class DatabaseError
     alias message msg;
     
     /**
-     * Error number
+     * Error code
      */
-    public int number;
+    public int internalCode;
     
-    /// ditto
-    alias number code;
+    /**
+     * Internal error 
+     */
+    public DatabaseErrorCode code;
     
     /**
      * Creates new DatabaseError instance
      *
      * Params:
-     *  number  = Error number
-     *  message = Error message
+     *  number  = Error code
      */
-    public this(int number, string message)
+    public this(int code)
     {
-        this.number  = number;
-        this.message = message;
+        update(code);
+    }
+    
+    /**
+     * Updates error to new error code
+     */
+    public void update(int code)
+    {
+        this.internalCode = code;
+        this.code = errorToCode(code);
+        this.message = codeToString(this.code);
+    }
+    
+    /**
+     * Converts error code to DatabaseErrorCode
+     * 
+     * Params:
+     *  code = Internal error code
+     * 
+     * Returns:
+     *  Converted code
+     */
+    protected DatabaseErrorCode errorToCode(int code)
+    {
+        return DatabaseErrorCode.Unknown;
+    }
+    
+    /**
+     * Returns: Error code in string form
+     */ 
+    public string codeToString(DatabaseErrorCode c)
+    {
+        switch(c)
+        {
+            case DatabaseErrorCode.NoError:
+                return "No Error";
+            break;
+                            
+            case DatabaseErrorCode.ConnectionError:
+                return "Connection Error";
+            break;
+                
+            case DatabaseErrorCode.InvalidQuery:
+                return "Invalid query";
+            break;
+                
+            case DatabaseErrorCode.InvalidData:
+                return "Invalid data";
+            break;
+                
+            case DatabaseErrorCode.ServerError:
+                return "Server Error";
+            break;
+                
+            case DatabaseErrorCode.OutOfSync:
+                return "Out of sync";
+            break;
+            
+            default:
+                return "Unknown Error";
+        }
     }
     
     /**
@@ -97,25 +172,15 @@ class DatabaseError
      */
     public override string toString()
     {
-        return toString("($n):$m");
+        return message;
     }
     
     /**
-     * Represents error as one string
-     * 
-     * Params:
-     *  format = Returned string format, two "variables" are available:
-     *    $n, which represents number and $m which represents message.
-     *
-     * Returns:
-     *  Formatted message
+     * Checks if any error occured
      */
-    public string toString(string format)
+    bool opCast(T)() if (is(T == bool))
     {
-        string formatted = format;
-        formatted = formatted.replace("$n", to!string(number));
-        formatted = formatted.replace("$m", message);
-        return formatted;
+        return code != DatabaseErrorCode.NoError;
     }
 }
 

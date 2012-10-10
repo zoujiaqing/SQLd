@@ -171,7 +171,10 @@ class Statement
         
 		static if(isSomeString!T) {
             value = wrap(_db.escape(value));
-		}
+		}        
+        else static if(is(T == bool)) {
+            value = wrap(_value ? "1" : "0");
+        }
 		else static if(is(T : char)) {
 			value = _db.escape((&_value)[0..1].idup)[0..$];
 		}

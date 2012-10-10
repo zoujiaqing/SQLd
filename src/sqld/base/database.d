@@ -67,7 +67,7 @@ abstract class Database
     abstract Statement prepare(string query);
     
     /**
-     * Checks if connection is alive
+     * Checks if Database is alive
      */
     abstract bool connected() @property;
     
@@ -124,15 +124,15 @@ abstract class Database
         switch(uri.rawscheme)
         {
             case "mysql":
-                Database.instance = new MySQL(uri);
+                Database.instance = new MySQLDatabase(uri);
             break;
             
             case "sqlite":
-                Database.instance = new SQLite(uri);
+                Database.instance = new SQLiteDatabase(uri);
             break;
             
             case "postgre":
-                Database.instance = new Postgre(uri);
+                Database.instance = new PostgreDatabase(uri);
             break;
             
             default:

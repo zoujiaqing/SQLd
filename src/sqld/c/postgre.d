@@ -18,6 +18,7 @@ void PQfreemem(const(void)*ptr);
 
 const (char*) PQerrorMessage(PGconn*);
 const (char*) PQresultErrorMessage(PGresult*);
+const (char*) PQresultErrorField(const PGresult* res, int fieldcode);
 
 PGresult* PQexec(PGconn*, const(char)*);
 void PQclear(PGresult*);

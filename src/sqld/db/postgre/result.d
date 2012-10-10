@@ -9,7 +9,7 @@ import sqld.base.database,
 import std.conv : to;
 import std.string : stripRight;
 
-class PostgreResult : Result
+class PostgresResult : Result
 {
     protected
     {
@@ -25,7 +25,7 @@ class PostgreResult : Result
     
     
     /**
-     * Creates new PostgreResult instance
+     * Creates new PostgresResult instance
      *
      * Params:  
      *  res = Postgre result

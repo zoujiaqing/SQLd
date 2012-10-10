@@ -1,12 +1,12 @@
 module sqld.db.postgre.database;
 
 import sqld.base.database,
-       sqld.base.error,
        sqld.base.result,
        sqld.base.transaction,
        sqld.uri,
        sqld.c.postgre,
 	   sqld.db.postgre.statement,
+       sqld.db.postgre.error,
        sqld.db.postgre.result,
        sqld.db.postgre.table;
 import std.string;
@@ -14,7 +14,7 @@ import std.string;
 /**
  * Represents PostgreSQL database connection
  */
-final class Postgre : Database
+final class PostgreDatabase : Database
 {
     protected
     {
@@ -22,12 +22,12 @@ final class Postgre : Database
         string[string] _params;
         string[string] _aliases;
         int            _code;
-        DatabaseError  _error;
+        PostgreDatabaseError  _error;
     }
     
     
     /**
-     * Creates new Postgre object instance
+     * Creates new PostgreDatabase object instance
      * 
      * Params:
      *  params = Associative array with connection details
@@ -49,7 +49,7 @@ final class Postgre : Database
      * Examples:
      * ---
      * auto uri = Uri("postgre://user:pass@localhost/");
-     * auto db = new Postgre(uri);
+     * auto db = new PostgreDatabase(uri);
      * db.open();
      * // ...
      * db.close();
@@ -92,7 +92,7 @@ final class Postgre : Database
     
     protected this()
     {
-        _error = new DatabaseError(0, "");
+        _error = new PostgreDatabaseError("");
         Database.instance = this;   
     }
     
@@ -107,7 +107,7 @@ final class Postgre : Database
      *
      * Examples:
      * ---
-     * auto db = new Postgre("postgre://user:pass@host/db");
+     * auto db = new PostgreDatabase("postgre://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();
@@ -119,13 +119,13 @@ final class Postgre : Database
      * Throws:
      *  DatabaseException if could not connect
      */
-    public override Postgre open()
+    public override PostgreDatabase open()
     {
         _sql = PQconnectdb(paramsToCString());
         
         if( (_code = PQstatus(_sql)) != CONNECTION_OK) {
-            _error.msg = to!string(PQerrorMessage(_sql));
-            throw new ConnectionException("Could not connect to database: "~_error.msg);
+            _error.update("_CONN");
+            throw new ConnectionException("Could not connect to database");
         }
         
         return this;
@@ -136,16 +136,16 @@ final class Postgre : Database
      *
      * Examples:
      * ---
-     * auto db = new Postgre("postgre://user:pass@host/db");
+     * auto db = new PostgreDatabase("postgre://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();
      * ---
      *
      * Returns:
-     *  Postgre Database
+     *  Postgres Database
      */
-    public override Postgre close()
+    public override PostgreDatabase close()
     {
         if(_sql !is null)
         {
@@ -185,23 +185,23 @@ final class Postgre : Database
      *  DatabaseException
      *
      * Returns:
-     *  PostgreResult
+     *  PostgresResult
      */
-    public override PostgreResult execute(string query, string file = __FILE__, uint line = __LINE__)
+    public override PostgresResult execute(string query, string file = __FILE__, uint line = __LINE__)
     {
         if(_sql is null) {
-            throw new ConnectionException("Cannot escape string without connecting to database");
+            throw new ConnectionException("Cannot execute string without connecting to database");
         }
         
         PGresult* _res = PQexec(_sql, query.toStringz);
         auto status = PQresultStatus(_res);
         
         if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
-            _error.msg = to!string(PQresultErrorMessage(_res));
+            import std.stdio;
+            _error.update(to!string(PQresultErrorField(_res, 'C')));
             throw new QueryException(_error.msg, file, line);
         }
-        
-        return new PostgreResult(_sql, _res);
+        return new PostgresResult(_sql, _res);
     }
     
     
@@ -299,8 +299,8 @@ final class Postgre : Database
      * Returns:
      *  DatabaseError Last error
      */
-    public override DatabaseError error() @property
-    {   
+    public override PostgreDatabaseError error() @property
+    {
         return _error;
     }
     
@@ -312,7 +312,7 @@ final class Postgre : Database
      */
     public override bool isError() @property
     {
-        return this.error.number != 0;
+        return this.error.code != DatabaseErrorCode.NoError;
     }
     
     /**

@@ -7,11 +7,11 @@
 module sqld.db.sqlite.database;
 
 import sqld.base.database,
-       sqld.base.error,
        sqld.base.transaction,
        sqld.uri,       
        etc.c.sqlite3,
 	   sqld.db.sqlite.statement,
+       sqld.db.sqlite.error,
        sqld.db.sqlite.result,
        sqld.db.sqlite.table;
        
@@ -35,14 +35,14 @@ private alias toStringz c;
 /**
  * Represents SQLite database connection
  */
-final class SQLite : Database
+final class SQLiteDatabase : Database
 {   
     /**
      * Database file
      */
     public string file;
     protected sqlite3* _sql;
-    
+    SQLiteDatabaseError _error;
     
     
     /**
@@ -84,6 +84,7 @@ final class SQLite : Database
     
     protected this()
     {
+        _error = new SQLiteDatabaseError(0);
         Database.instance = this;   
     }
     
@@ -113,7 +114,7 @@ final class SQLite : Database
     public override Database open()
     {   
         int res = sqlite3_open(file.c, &_sql);
-        
+                
         if(res != SQLITE_OK)
         {
             throw new ConnectionException("Could not connect to database");
@@ -281,12 +282,11 @@ final class SQLite : Database
      * Returns:
      *  DatabaseError Last error
      */
-    public override DatabaseError error() @property
+    public override SQLiteDatabaseError error() @property
     {
         int    no  = sqlite3_errcode(_sql);
-        string msg = to!string(sqlite3_errmsg(_sql));
         
-        return new DatabaseError(no, msg);
+        return new SQLiteDatabaseError(no);
     }
     
     /**
@@ -297,7 +297,7 @@ final class SQLite : Database
      */
     public override bool isError() @property
     {
-        return this.error.number != 0;
+        return this.error.code != DatabaseErrorCode.NoError;
     }
     
     /**

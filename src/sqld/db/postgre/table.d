@@ -38,7 +38,7 @@ class PostgreTable : Table
                 return ColumnType.Integer;
             break;
             
-            case "character":
+            case "character varying":
                 return ColumnType.Varchar;
             break;
             
