@@ -1,4 +1,4 @@
-module sqld.db.postgre.error;
+module sqld.db.postgres.error;
 
 public import sqld.base.error;
 
@@ -6,7 +6,7 @@ public import sqld.base.error;
 /**
  * Represents Postgres database error
  */
-final class PostgreDatabaseError : DatabaseError
+final class PostgresDatabaseError : DatabaseError
 {
     /**
      * Creates new DatabaseError instance

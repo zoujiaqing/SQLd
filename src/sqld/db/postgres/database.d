@@ -1,20 +1,21 @@
-module sqld.db.postgre.database;
+module sqld.db.postgres.database;
 
-import sqld.base.database,
+import sqld.util,
+       sqld.base.database,
        sqld.base.result,
        sqld.base.transaction,
        sqld.uri,
-       sqld.c.postgre,
-	   sqld.db.postgre.statement,
-       sqld.db.postgre.error,
-       sqld.db.postgre.result,
-       sqld.db.postgre.table;
+       sqld.c.postgres,
+	   sqld.db.postgres.statement,
+       sqld.db.postgres.error,
+       sqld.db.postgres.result,
+       sqld.db.postgres.table;
 import std.string;
 
 /**
  * Represents PostgreSQL database connection
  */
-final class PostgreDatabase : Database
+final class PostgresDatabase : Database
 {
     protected
     {
@@ -22,12 +23,13 @@ final class PostgreDatabase : Database
         string[string] _params;
         string[string] _aliases;
         int            _code;
-        PostgreDatabaseError  _error;
+        bool           _autoconnect;
+        PostgresDatabaseError  _error;
     }
     
     
     /**
-     * Creates new PostgreDatabase object instance
+     * Creates new PostgresDatabase object instance
      * 
      * Params:
      *  params = Associative array with connection details
@@ -40,6 +42,11 @@ final class PostgreDatabase : Database
         _params = params;
         _aliases = ["pass": "password", "db": "dbname"];
         
+        if("autoconnect" in params) {
+            _autoconnect = strToBool(params["autoconnect"]);
+            params.remove("autoconnect");
+        }
+        
         this();
     }
     
@@ -49,7 +56,7 @@ final class PostgreDatabase : Database
      * Examples:
      * ---
      * auto uri = Uri("postgre://user:pass@localhost/");
-     * auto db = new PostgreDatabase(uri);
+     * auto db = new PostgresDatabase(uri);
      * db.open();
      * // ...
      * db.close();
@@ -82,9 +89,13 @@ final class PostgreDatabase : Database
         
         auto params = uri.query;
         
-        for(int i; i < params.length; i++) {
-            auto param = params[i];
-            _params[param.name] = param.value;
+        try {
+            _autoconnect = strToBool(uri.query["autoconnect"]);            
+        } catch(Exception e) {
+        }
+        
+        foreach(k, v; params.params) {
+            _params[k] = v;
         }
         
         this();
@@ -92,7 +103,11 @@ final class PostgreDatabase : Database
     
     protected this()
     {
-        _error = new PostgreDatabaseError("");
+        if(_autoconnect) {
+            open();
+        }
+        
+        _error = new PostgresDatabaseError("");
         Database.instance = this;   
     }
     
@@ -107,7 +122,7 @@ final class PostgreDatabase : Database
      *
      * Examples:
      * ---
-     * auto db = new PostgreDatabase("postgre://user:pass@host/db");
+     * auto db = new PostgresDatabase("postgre://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();
@@ -119,7 +134,7 @@ final class PostgreDatabase : Database
      * Throws:
      *  DatabaseException if could not connect
      */
-    public override PostgreDatabase open()
+    public override PostgresDatabase open()
     {
         _sql = PQconnectdb(paramsToCString());
         
@@ -136,7 +151,7 @@ final class PostgreDatabase : Database
      *
      * Examples:
      * ---
-     * auto db = new PostgreDatabase("postgre://user:pass@host/db");
+     * auto db = new PostgresDatabase("postgre://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();
@@ -145,7 +160,7 @@ final class PostgreDatabase : Database
      * Returns:
      *  Postgres Database
      */
-    public override PostgreDatabase close()
+    public override PostgresDatabase close()
     {
         if(_sql !is null)
         {
@@ -242,13 +257,13 @@ final class PostgreDatabase : Database
      * Returns:
      *  New statement
      */
-    public override PostgreStatement prepare(string query)
+    public override PostgresStatement prepare(string query)
     {
         if(_sql is null) {
             throw new ConnectionException("Cannot prepare statement without connecting to database");
         }
         
-        return new PostgreStatement(this, query);
+        return new PostgresStatement(this, query);
     }
     
     /**
@@ -299,7 +314,7 @@ final class PostgreDatabase : Database
      * Returns:
      *  DatabaseError Last error
      */
-    public override PostgreDatabaseError error() @property
+    public override PostgresDatabaseError error() @property
     {
         return _error;
     }
@@ -321,9 +336,9 @@ final class PostgreDatabase : Database
      * Params:
      *  table = Table name
      */
-    public override PostgreTable tableInfo(string name)
+    public override PostgresTable tableInfo(string name)
     {
-        return new PostgreTable(this, name);
+        return new PostgresTable(this, name);
     }
     
     /**

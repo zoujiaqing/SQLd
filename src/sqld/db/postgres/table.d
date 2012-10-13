@@ -1,11 +1,11 @@
-module sqld.db.postgre.table;
+module sqld.db.postgres.table;
 
 import sqld.all,
        sqld.base.column,
        sqld.base.table;
 import std.string;
 
-class PostgreTable : Table
+class PostgresTable : Table
 {   
     /**
      * Creates new PostgreTable instance

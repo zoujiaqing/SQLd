@@ -17,30 +17,6 @@ import std.array  : split;
 
 static import std.uri;
 
-/** 
- * Represents query parameter
- */
-struct QueryParam
-{
-    /**
-     * Creates new QueryParam object
-     * 
-     * Params:
-     *  n   =   Query param name
-     *  v   =   Query param value
-     */
-    this(string n, string v)
-    {
-        name = n;
-        value = v;
-    }
-    
-    /// Query param name
-    string name;
-    
-    /// Query param value
-    string value;
-}
 
 /**
  * Represents URI query
@@ -50,8 +26,7 @@ struct UriQuery
     /**
      * Array of params
      */
-    QueryParam[55] params;
-    size_t count = 0;
+    string[string] params;
     
     /**
      * Returns query param value with specified name
@@ -67,49 +42,38 @@ struct UriQuery
      */
     string opIndex(string name)
     {
-        foreach(param; params)
-        {
-            if(param.name == name)
-                return param.value;
+        if(name !in params) {
+            throw new Exception("Param with name '"~name~"' does not exists");
         }
         
-        throw new Exception("Param with name '"~name~"' does not exists");
+        return params[name];
     }
     
     size_t length() const
     {
-        return count;
+        return params.length;
     }
     
     /**
-     * Returns QueryParam with specified index
+     * Adds new query param
      * 
      * Params:
-     *  i   =   Query param index
-     * 
-     * Returns:
-     *  QueryParam
-     * 
-     * Throws:
-     *  Exception if index is out of bounds
+     *  k = Key
+     *  v = Value
      */
-    QueryParam opIndex(int i)
+    void add(string k, string v)
     {
-        if(i >= count)
-            throw new Exception("Trying to get index that does not exits");
-        
-        return params[i];
+        params[k] = v;
     }
     
     /**
-     * Adds new QueryParam
-     * 
-     * Params:
-     *  param   =   Param to add
+     * Removes query param
      */
-    void add(QueryParam param)
+    void remove(string k)
     {
-        params[count++] = param;
+        if(k in params) {
+            params.remove(k);
+        }
     }
 }
 
@@ -275,7 +239,7 @@ class Uri
         foreach(part; parts)
         {
             auto i = part.indexOf("=");
-            _query.add( QueryParam( part[0 .. i], part[i+1..$]) );
+            _query.add( part[0 .. i], part[i+1..$] );
         }
                 
     }
@@ -408,7 +372,7 @@ class Uri
         return _rawquery;
     }
     
-    @property UriQuery query() const
+    @property UriQuery query()
     {
         return _query;
     }
@@ -520,8 +484,8 @@ unittest
     assert(uri.port() == 666);
         
     UriQuery query = UriQuery();
-    query.add(QueryParam("key", "value"));
-    query.add(QueryParam("key1" ,"value1"));
+    query.add("key", "value");
+    query.add("key1" ,"value1");
     assert(query.length() == 2);
     
     uri = Uri.parseUri("http://test.com/mail/user@page.com");

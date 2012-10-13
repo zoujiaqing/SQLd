@@ -181,7 +181,8 @@ class Statement
 		else static if(is(T == Date) || is(T == TimeOfDay)) {
 			value = wrap(_value.toISOExtString());
 		}
-		else static if(is(T == DateTime)) {
+		else static if(is(T == DateTime))
+        {
 			value = wrap(
 				_value.date.toISOExtString() ~ " " ~
 				_value.timeOfDay.toISOExtString()

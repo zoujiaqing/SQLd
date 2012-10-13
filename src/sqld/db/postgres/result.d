@@ -1,10 +1,10 @@
-module sqld.db.postgre.result;
+module sqld.db.postgres.result;
 
 import sqld.base.database,
        sqld.base.result,
        sqld.base.row,
-       sqld.c.postgre,
-       sqld.db.postgre.database;
+       sqld.c.postgres,
+       sqld.db.postgres.database;
        
 import std.conv : to;
 import std.string : stripRight;

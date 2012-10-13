@@ -30,18 +30,21 @@ class Cell
 	/**
 	 * Boolean value of cell
 	 * 
-	 * This function returns true if cell value is '1' or 't'
+	 * This function returns true value is one of following:
+     *  "1", "t", "y", "true", "yes"
 	 * 
 	 * Returns:
 	 * 	Bool value
 	 */
 	public bool getBool()
 	{
-		return (value == "1" || value == "t" || value == "y" || value == "true" || value == "yes");
+		return sqld.util.strToBool(value);
 	}
 	
 	/**
 	 * Date value of cell
+     * 
+     * Uses Date.fromISOExtString to parse string into DateTime instance.
 	 * 
 	 * Throws:
 	 *  DateTimeException if format is not correct
@@ -122,8 +125,7 @@ class Cell
 		else
 		{
 			parts = value.split("-");
-			if(parts.length >= 3)
-			{
+            if(parts.length >= 3) {
 				date = Date.fromISOExtString(parts[0..3].join("-"));
 			}			
 		}

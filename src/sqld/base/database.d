@@ -8,7 +8,7 @@ import sqld.base.error,
        sqld.base.statement,
        sqld.db.mysql.database,
        sqld.db.sqlite.database,
-       sqld.db.postgre.database;
+       sqld.db.postgres.database;
 
 /**
  * Represents abstract database
@@ -67,7 +67,7 @@ abstract class Database
     abstract Statement prepare(string query);
     
     /**
-     * Checks if Database is alive
+     * Checks if Database connection is alive
      */
     abstract bool connected() @property;
     
@@ -132,7 +132,7 @@ abstract class Database
             break;
             
             case "postgre":
-                Database.instance = new PostgreDatabase(uri);
+                Database.instance = new PostgresDatabase(uri);
             break;
             
             default:

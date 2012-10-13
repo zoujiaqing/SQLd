@@ -1,4 +1,4 @@
-module sqld.db.postgre.statement;
+module sqld.db.postgres.statement;
 
 import sqld.base.statement;
 import sqld.base.database;
@@ -7,7 +7,7 @@ import std.conv;
 /**
  * Represents Postgre statement
  */
-class PostgreStatement : Statement
+class PostgresStatement : Statement
 {	
 	/**
 	 * Creates new Postgre statement

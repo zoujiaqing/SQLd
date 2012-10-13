@@ -27,6 +27,6 @@ public import
 /*version(SQLD_POSTGRE)
 {*/
 public import 
-     sqld.db.postgre.database,
-     sqld.db.postgre.result;
+     sqld.db.postgres.database,
+     sqld.db.postgres.result;
 //}

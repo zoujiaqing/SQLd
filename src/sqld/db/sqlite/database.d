@@ -6,7 +6,8 @@
  */
 module sqld.db.sqlite.database;
 
-import sqld.base.database,
+import sqld.util,
+       sqld.base.database,
        sqld.base.transaction,
        sqld.uri,       
        etc.c.sqlite3,
@@ -43,6 +44,7 @@ final class SQLiteDatabase : Database
     public string file;
     protected sqlite3* _sql;
     SQLiteDatabaseError _error;
+    bool _autoconnect;
     
     
     /**
@@ -54,9 +56,10 @@ final class SQLiteDatabase : Database
      * Throws:
      *  DatabaseException if there is no memory to allocate MySQL connection
      */
-    public this(string db)
+    public this(string db, bool autoconnect)
     {
         this.file = db;
+        this._autoconnect = autoconnect;
         this();
     }
     
@@ -79,11 +82,20 @@ final class SQLiteDatabase : Database
     {
         this.file = uri.path[1..$];
         
+        try {
+            _autoconnect = strToBool(uri.query["autoconnect"]);            
+        } catch(Exception e) {
+        }
+        
         this();
     }
     
     protected this()
     {
+        if(_autoconnect) {
+            open();
+        }
+        
         _error = new SQLiteDatabaseError(0);
         Database.instance = this;   
     }

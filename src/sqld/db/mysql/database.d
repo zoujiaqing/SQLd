@@ -6,7 +6,8 @@
  */
 module sqld.db.mysql.database;
 
-import sqld.base.database,
+import sqld.util,
+       sqld.base.database,
        sqld.base.transaction,
        sqld.uri,
        sqld.c.mysql,
@@ -18,6 +19,7 @@ import sqld.base.database,
        
 import std.string : toStringz;
 import std.conv   : to;
+import std.algorithm : countUntil;
 import std.stdio;
 
 private alias toStringz c;
@@ -34,6 +36,7 @@ final class MySQLDatabase : Database
         string _host;
         string _db;
         int    _port;
+        bool   _autoconnect;
         MYSQL* _sql;
         MySQLDatabaseError _error;
     }
@@ -52,13 +55,14 @@ final class MySQLDatabase : Database
      * Throws:
      *  DatabaseException if there is no memory to allocate MySQL connection
      */
-    public this(string address, string user = "root", string password = "", string db = null, int port = 3306)
+    public this(string address, string user = "root", string password = "", string db = null, int port = 3306, bool autoconnect = false)
     {
         _host = address;
         _user = user;
         _pass = password;
         _db   = db;
         _port = port;
+        _autoconnect = autoconnect;
         this();
     }
     
@@ -98,6 +102,12 @@ final class MySQLDatabase : Database
             _port = 3306;
         } else {
             _port = to!uint(params["port"]);
+        }
+        
+        if("autoconnect" !in params) {
+            _autoconnect = false;
+        } else {
+            _autoconnect = strToBool(params["autoconnect"]);
         }
     }
     
@@ -140,6 +150,11 @@ final class MySQLDatabase : Database
             _port = uri.port;
         }
         
+        try {
+            _autoconnect = strToBool(uri.query["autoconnect"]);            
+        } catch(Exception e) {
+        }
+        
         this();
     }
     
@@ -165,6 +180,10 @@ final class MySQLDatabase : Database
     
     protected this()
     {
+        if(_autoconnect) {
+            open();
+        }
+        
         _error = new MySQLDatabaseError(0);
         Database.instance = this;
     }
@@ -211,7 +230,7 @@ final class MySQLDatabase : Database
         if(_sql is null)
         {
             _error.update(2002);
-            //throw new DatabaseException("Could not connect to database");
+            throw new DatabaseException("Could not connect to database");
         }
         
         return this;
