@@ -46,7 +46,6 @@ class MySQLResult : Result
         
         ulong _rows;
         ulong _index;
-        ulong _affected;
     }
     
     
@@ -54,6 +53,7 @@ class MySQLResult : Result
      * Creates new MySQLResult instance
      *
      * Params:  
+     *  db = Database handle
      *  res = MySQL result
      */
     this(MYSQL* db, MYSQL_RES* res)
@@ -63,19 +63,18 @@ class MySQLResult : Result
         
         if(res !is null)
         {
+            // Result has data
             _rows = mysql_num_rows(_res);
             _columnNum = mysql_num_fields(_res);
             
-            loadColumns();
-            
-            _affected = _rows;
-            _usable = true;
-			
+            loadColumns();            
+            _usable = true;			
 			loadRow();
         }
         else
         {
-            _affected = mysql_affected_rows(_db);
+            // No data, query of type INSERT and similar
+            _rows = mysql_affected_rows(_db);
         }
     }
     
@@ -88,7 +87,7 @@ class MySQLResult : Result
     }
     
     /**
-     * Loads field array
+     * Loads column names
      */
     protected void loadColumns()
     {
@@ -119,15 +118,15 @@ class MySQLResult : Result
     /**
      * Fetches row
      *
-     * Returned data is Row class, can be accessed like normal
-     *  or associative array. If error occured, exception is thrown.
+     * This function returns cached row, loaded by next() method.
+     * Continuous calling will return same row until next() is called.
      *
      * Examples:
      * ---
      * auto res = db.query("SELECT ...");
      * while(res.isValid)
      * {
-     *     writeln(res.fetchAssoc());
+     *     writeln(res.fetch());
      *     res.next();
      * }
      * ---
@@ -184,14 +183,14 @@ class MySQLResult : Result
     }
 	
 	protected void loadRow()
-	{
+	{        
 		MYSQL_ROW crow;
         string[] _row;
         
         crow = mysql_fetch_row(_res);
         
         if(crow is null) {
-            throw new DatabaseException("Could not fetch row.");
+            throw new ResultException("Could not fetch row.");
         }
         
         for(int i; i < _columnNum; i++ ) {
@@ -211,6 +210,8 @@ class MySQLResult : Result
     public override void reset()
     {
         _index = 0;
+        mysql_data_seek(_res, _index);
+        loadRow();
     }
 
     /**
@@ -236,10 +237,13 @@ class MySQLResult : Result
     }
     
     /**
-     * Check if there are any rows remeaining
+     * Check if there are any rows remaining
+     * 
+     * This function can return false if result was freed 
+     * or query was not SELECT type.
      *
      * Returns:
-     *  True if there are any remeaining rows
+     *  True if there are any remaining rows
      */
     public override bool isValid() @property
     {
@@ -255,13 +259,5 @@ class MySQLResult : Result
     public override ulong index() @property
     {
         return _index;
-    }
-    
-    /**
-     * Affected rows
-     */
-    public override ulong affectedRows() @property
-    {
-        return _affected;
     }
 }

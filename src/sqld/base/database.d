@@ -17,6 +17,9 @@ abstract class Database
 {
     /**
      * Connects to database
+     * 
+     * Throws:
+     *  ConnectionException if connection could not be estabilished
      */
     abstract Database open();
     
@@ -28,9 +31,12 @@ abstract class Database
     
     /**
      * Last error
+     * 
+     * If no error occured, returned Error instance has code property 
+     * set to DatabaseErrorCode.NoError.
      *
      * Returns:
-     *  Error - Last error
+     *  Error - last error occured
      */
     abstract DatabaseError error() @property;
     
@@ -47,12 +53,16 @@ abstract class Database
      *
      * Params:
      *  query = Query to execute
+     * 
+     * Throws:
+     *  QueryException when executing query failed
      *
      * Returns:
      *  Result
      */
     abstract Result execute(string query, string file = __FILE__, uint line = __LINE__);
-    /// ditto	
+    
+    /// ditto
     alias execute query;
     
     /**
@@ -73,6 +83,9 @@ abstract class Database
     
     /**
      * Begins transaction
+     * 
+     * Params:
+     *  level = Transaction isolation level
      *
      * Returns:
      *  Transaction
@@ -95,6 +108,9 @@ abstract class Database
      *
      * Params:
      *  table = Table name
+     * 
+     * Returns:
+     *  Table information
      */
     abstract public Table tableInfo(string table);
 

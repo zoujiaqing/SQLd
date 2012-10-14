@@ -9,16 +9,22 @@ import sqld.base.database,
 import std.conv : to;
 import std.string : stripRight;
 
+/**
+ * Postgres query result
+ */
 class PostgresResult : Result
 {
     protected
     {
         PGconn*   _db;
         PGresult* _res;
-        int       _rows;
+        
+        ulong     _rows;
         int       _fieldNum;
         int       _index;
+        
         string[]  _columns;
+        Row       _row;
         bool      _usable;
         ulong     _affected;
     }
@@ -28,6 +34,7 @@ class PostgresResult : Result
      * Creates new PostgresResult instance
      *
      * Params:  
+     *  db = Database
      *  res = Postgre result
      */
     public this(PGconn* db, PGresult* res)
@@ -41,16 +48,16 @@ class PostgresResult : Result
             _fieldNum = PQnfields(_res);
             
             loadColumns();
-            _usable = true;
-            _affected = _rows;
+            _usable = true;            
+            loadRow();
         }
         else if(PQresultStatus(res) == PGRES_COMMAND_OK)
         {
             string strres = to!string(PQcmdTuples(_res));
             if(strres != "") {
-                _affected = to!ulong(strres);
+                _rows = to!ulong(strres);
             }
-        }
+        }        
     }
     
     public ~this()
@@ -74,8 +81,8 @@ class PostgresResult : Result
     /**
      * Fetches row
      *
-     * Returned data is Row class, can be accessed like normal
-     *  or associative array. If error occured, exception is thrown.
+     * This function returns cached row, loaded by next() method.
+     * Continuous calling will return same row until next() is called.
      *
      * Examples:
      * ---
@@ -95,15 +102,7 @@ class PostgresResult : Result
      */
     public override Row fetch(string file = __FILE__, uint line = __LINE__)
     {
-        string[] row;
-        int size;
-        
-        for(int i; i < _fieldNum; i++ )
-        {
-            row ~= to!string(PQgetvalue(_res, _index, i)).stripRight();
-        }
-        
-        return new Row(row, _columns);
+        return _row;
     }
     
     /**
@@ -116,12 +115,13 @@ class PostgresResult : Result
      */
     public override bool next()
     {
-        if( ++_index >= _rows  )
+        if( ++_index < _rows  )
         {
-            return false;
+            loadRow();
+            return true;
         }
         
-        return true;
+        return false;
     }
     
     /**
@@ -147,10 +147,10 @@ class PostgresResult : Result
     }
     
     /**
-     * Query result row count
-     *
-     * Returns:
-     *  Row count
+     * Row count
+     * 
+     * If query was SELECT it returns number rows selected, 
+     * if any other, it returns affected rows.
      */
     public override ulong length() @property
     {
@@ -170,6 +170,8 @@ class PostgresResult : Result
     
     /**
      * Check if there are any rows remeaining
+     * 
+     * Returns false is result was freed or if query was not SELECT type.
      *
      * Returns:
      *  True if there are any remeaining rows
@@ -190,11 +192,16 @@ class PostgresResult : Result
         return _index;
     }
     
-    /**
-     * Affected rows
-     */
-    public override ulong affectedRows() @property
+    protected void loadRow()
     {
-        return _affected;
+        string[] row;
+        int size;
+        
+        for(int i; i < _fieldNum; i++ )
+        {
+            row ~= to!string(PQgetvalue(_res, _index, i)).stripRight();
+        }
+        
+        _row = new Row(row, _columns);
     }
 }

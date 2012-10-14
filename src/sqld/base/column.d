@@ -3,6 +3,9 @@ module sqld.base.column;
 import std.conv;
 import sqld.base.cell;
 
+/**
+ * Represents column information
+ */
 class Column
 {
     protected
@@ -12,6 +15,16 @@ class Column
         Cell _default;
     }
     
+    
+    /**
+     * Creates new Column instance
+     * 
+     * Params:
+     *  name = Column name
+     *  type = Column type
+     *  defaultVal = Default column value
+     *  
+     */
     public this(string name, ColumnType type, string defaultVal)
     {
         _name = name;
@@ -43,12 +56,23 @@ class Column
         return _default;
     }
     
+    
+    /**
+     * Represents column as string
+     * 
+     * Returns:
+     *  String representation as string
+     */
     public override string toString()
     {
         return to!string([_name, to!string(_type), _default.value]);
     }
 }
 
+
+/**
+ * Represents column type
+ */
 enum ColumnType
 {
     Unknown,

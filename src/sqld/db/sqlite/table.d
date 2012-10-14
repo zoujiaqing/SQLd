@@ -4,10 +4,18 @@ import sqld.all,
        sqld.base.column,
        sqld.base.table;
 
-class SqliteTable : Table 
+
+/**
+ * Represents SQLite table info
+ */
+class SQLiteTable : Table 
 {
     /**
      * Creates new SqliteTable instance
+     * 
+     * Params:
+     *  db = Database instance
+     *  name = Table name
      */
     public this(Database db, string name)
     {

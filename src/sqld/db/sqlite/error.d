@@ -21,15 +21,6 @@ final class SQLiteDatabaseError : DatabaseError
         this.message = codeToString(this.code);
     }
     
-    /**
-     * Converts error code to DatabaseErrorCode
-     * 
-     * Params:
-     *  code = Internal error code
-     * 
-     * Returns:
-     *  Converted code
-     */
     protected DatabaseErrorCode errorToCode(int code)
     {
         switch(code)        

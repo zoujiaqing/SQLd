@@ -48,13 +48,11 @@ final class SQLiteDatabase : Database
     
     
     /**
-     * Creates new SQLite object instance
+     * Creates new SQLiteDatabase object instance
      * 
      * Params:
      *  db = Database filename
-     *
-     * Throws:
-     *  DatabaseException if there is no memory to allocate MySQL connection
+     *  autoconnect = Automatically connect to Database?
      */
     public this(string db, bool autoconnect)
     {
@@ -69,7 +67,7 @@ final class SQLiteDatabase : Database
      * Examples:
      * ---
      * auto uri = Uri("sqlite:///db.sqlite");
-     * auto db = new SQLite(uri);
+     * auto db = new SQLiteDatabase(uri);
      * db.open();
      * // ...
      * db.close();
@@ -111,7 +109,7 @@ final class SQLiteDatabase : Database
      *
      * Examples:
      * ---
-     * auto db = new SQLite("db.sqlite");
+     * auto db = new SQLiteDatabase("db.sqlite");
      * db.open();
      * // ...
      * db.close();
@@ -121,7 +119,7 @@ final class SQLiteDatabase : Database
      *  SQLite
      *
      * Throws:
-     *  DatabaseException if could not connect
+     *  ConnectionException if could not connect
      */
     public override Database open()
     {   
@@ -140,7 +138,7 @@ final class SQLiteDatabase : Database
      *
      * Examples:
      * ---
-     * auto db = new SQLite("db.sqlite");
+     * auto db = new SQLiteDatabase("db.sqlite");
      * db.open();
      * // ...
      * db.close();
@@ -169,7 +167,7 @@ final class SQLiteDatabase : Database
      * auto res = db.query("SELECT ...");
      * while(res.isValid)
      * {
-     *     writeln(res.fetchAssoc());
+     *     writeln(res.fetch());
      *     res.next();
      * }
      * ---
@@ -177,13 +175,12 @@ final class SQLiteDatabase : Database
      * auto res = db.query("SELECT ...");
      * foreach(row; res)
      * {
-     *     writeln(res["id"]);
+     *     writeln(row["id"]);
      * }
      * ---
      *
      * Params:
      *  query = Query to execute
-     *  values = Values to bind
      *
      * Throws:
      *  DatabaseException
@@ -213,8 +210,6 @@ final class SQLiteDatabase : Database
     /**
      * Escapes string
      *
-     * To use this function, connection to server must be estabilished.
-     *
      * Params:
      *  str = String to escape
      *
@@ -230,7 +225,7 @@ final class SQLiteDatabase : Database
     }
     
     /**
-     * Prepares new statement with speicified query
+     * Prepares new statement with specified query
      *
      * Params:
      *  query = Statement query
@@ -249,6 +244,9 @@ final class SQLiteDatabase : Database
     
     /**
      * Begins transaction
+     * 
+     * Params:
+     *  level = Transaction isolation level
      *
      * Returns:
      *  Transaction
@@ -289,7 +287,8 @@ final class SQLiteDatabase : Database
     /**
      * Last error
      *
-     * If no error occured, returns empty error struct
+     * If no error occured, returned error instance code 
+     * property will be set to DatabaseErrorCode.NoError
      *
      * Returns:
      *  DatabaseError Last error
@@ -317,10 +316,13 @@ final class SQLiteDatabase : Database
      *
      * Params:
      *  table = Table name
+     * 
+     * Returns:
+     *  SqliteTable Table information
      */
-    public override SqliteTable tableInfo(string name)
+    public override SQLiteTable tableInfo(string name)
     {
-        return new SqliteTable(this, name);
+        return new SQLiteTable(this, name);
     }
     
     /**

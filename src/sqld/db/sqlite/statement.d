@@ -14,6 +14,7 @@ class SQLiteStatement : Statement
 	 * 
 	 * Params:
 	 *  db = Database connection
+     *  query = Query to execute
 	 */
 	public this(Database db, string query)
 	{

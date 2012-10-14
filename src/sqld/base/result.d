@@ -26,9 +26,13 @@ class Result
     alias columns fields;
     
     /**
-     * Rows count
+     * Row count
+     * 
+     * If query was SELECT it returns number rows selected, 
+     * if any other, it returns affected rows.
      */
     abstract public ulong length() @property;
+    //alias length affectedRows;
     
     
     /**
@@ -47,12 +51,7 @@ class Result
     /**
      * Cleans up result
      */
-    abstract public void free();
-    
-    /**
-     * Affected rows
-     */
-    abstract public ulong affectedRows();
+    abstract public void free();    
     
     
     public bool empty()

@@ -6,10 +6,18 @@ import sqld.all,
 
 import std.algorithm;
 
-class MySqlTable : Table
+
+/**
+ * Represents MySQL table info
+ */
+class MySQLTable : Table
 {
     /**
-     * Creates new MySqlTable instance
+     * Creates new MySQLTable instance
+     * 
+     * Params:
+     *  db = Database instance
+     *  name = Table name
      */
     public this(Database db, string name)
     {
@@ -27,7 +35,11 @@ class MySqlTable : Table
             
         foreach(row; res)
         {
-            _columns ~= new Column(row["Field"], parseType(row["Type"]), row["Default"]);
+            _columns ~= new Column(
+                row["Field"],
+                parseType(row["Type"]),
+                row["Default"]
+            );
         }
     }
     

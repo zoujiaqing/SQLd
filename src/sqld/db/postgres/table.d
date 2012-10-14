@@ -5,10 +5,18 @@ import sqld.all,
        sqld.base.table;
 import std.string;
 
+
+/**
+ * Represents Postgres table info
+ */
 class PostgresTable : Table
 {   
     /**
      * Creates new PostgreTable instance
+     * 
+     * Params:
+     *  db = Database instance
+     *  name = Table name
      */
     public this(Database db, string name)
     {

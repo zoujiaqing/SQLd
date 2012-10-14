@@ -40,17 +40,23 @@ final class MySQLDatabase : Database
         MYSQL* _sql;
         MySQLDatabaseError _error;
     }
-    
+        
     
     /**
-     * Creates new MySQL object instance
+     * Creates new MySQLDatabase object instance
      * 
      * Params:
      *  address = Host name to connect
      *  user    = Database username
      *  pass    = Database password
-     *  db        = Default database to use
-     *  port     = Port to connect on
+     *  db      = Default database to use
+     *  port    = Port to connect on
+     *  autoconnect = Automatically connect to Database?
+     * 
+     * Examples:
+     * -------
+     *  auto db = new MySQLDatabase("localhost", "root", "", "test", 3306, true);
+     * -------
      *
      * Throws:
      *  DatabaseException if there is no memory to allocate MySQL connection
@@ -68,6 +74,21 @@ final class MySQLDatabase : Database
     
     /**
      * Creates new Database instance
+     * 
+     * Autoconnect parameter takes "1", "t", "true", "y", "yes" as positive values, 
+     * all others are taken as nonpositive.
+     * 
+     * Examples:
+     * -------
+     *  auto db = new MySQLDatabase([
+     *  "host": "localhost",
+     *  "user": "root",
+     *  "pass": "foobar",
+     *  "db":   "test",
+     *  "port": "3306"
+     *  "autoconnect": "true"
+     * ]);
+     * -------
      *
      * Params:
      *  params = Connection params
@@ -75,7 +96,7 @@ final class MySQLDatabase : Database
     public this(string[string] params)
     {
         if("host" !in params) {
-            throw new ConnectionDetailsException("No 'host' parameter specified");
+            throw new ConnectionException("No 'host' parameter specified");
         } else {
             _host = params["host"];
         }
@@ -87,13 +108,21 @@ final class MySQLDatabase : Database
         }
         
         if("pass" !in params) {
-            _pass = "";
+            if("password" in params) {
+                _pass = params["password"];
+            } else {
+                _pass = "";
+            }
         } else {
             _pass = params["pass"];
         }
         
         if("db" !in params) {
-            _db = "";
+            if("dbname" in params) {
+                _db = params["dbname"];
+            } else {
+                _db = "";
+            }
         } else {
             _db = params["db"];
         }
@@ -114,11 +143,13 @@ final class MySQLDatabase : Database
     /**
      * Creates new Database instance
      * 
+     * Autoconnect parameter takes "1", "t", "true", "y", "yes" as positive values, 
+     * all others are taken as nonpositive.
+     * 
      * Examples:
      * ---
-     * auto uri = Uri("mysql://user:pass@localhost/");
-     * auto db = new MySQL(uri);
-     * db.open();
+     * auto uri = Uri("mysql://user:pass@localhost/database?autoconnect=1");
+     * auto db = new MySQLDatabase(uri);
      * // ...
      * db.close();
      * ---
@@ -163,15 +194,15 @@ final class MySQLDatabase : Database
      *
      * Examples:
      * ---
-     * auto uri = "mysql://user:pass@localhost/";
-     * auto db = new MySQL(uri);
+     * auto uri = "mysql://user:pass@localhost/database";
+     * auto db = new MySQLDatabase(uri);
      * db.open();
      * // ...
      * db.close();
      * ---
      * 
      * Params:
-     *   uri = DataSourceName
+     *   uri = Connection details
      */
     public this(string uri)
     {
@@ -199,17 +230,17 @@ final class MySQLDatabase : Database
      *
      * Examples:
      * ---
-     * auto db = new MySQL("mysql://user:pass@host/db");
+     * auto db = new MySQLDatabase("mysql://user:pass@host/db");
      * db.open();
      * // ...
      * db.close();
      * ---
      *
      * Returns:
-     *  MySQL
+     *  MySQLDatabase
      *
      * Throws:
-     *  DatabaseException if could not connect
+     *  ConnectionException if could not connect
      */
     public override Database open()
     {
@@ -230,7 +261,7 @@ final class MySQLDatabase : Database
         if(_sql is null)
         {
             _error.update(2002);
-            throw new DatabaseException("Could not connect to database");
+            throw new ConnectionException("Could not connect to database");
         }
         
         return this;
@@ -241,7 +272,7 @@ final class MySQLDatabase : Database
      *
      * Examples:
      * ---
-     * auto db = new MySQL("mysql:host=localhost;user=root;pass=...");
+     * auto db = new MySQLDatabase("mysql://user:pass@host/db.");
      * db.open();
      * // ...
      * db.close();
@@ -266,17 +297,9 @@ final class MySQLDatabase : Database
      * Examples:
      * ---
      * auto res = db.execute("SELECT ...");
-     * while(res.isValid)
-     * {
-     *     writeln(res.fetchAssoc());
-     *     res.next();
-     * }
-     * ---
-     * ---
-     * auto res = db.execute("SELECT ...");
      * foreach(row; res)
      * {
-     *     writeln(res["id"]);
+     *     writeln(row["id"]);
      * }
      * ---
      *
@@ -284,7 +307,7 @@ final class MySQLDatabase : Database
      *  query = Query to execute
      *
      * Throws:
-     *  DatabaseException
+     *  QueryException
      *
      * Returns:
      *  MySQLResult
@@ -320,8 +343,6 @@ final class MySQLDatabase : Database
      * Escapes string
      *
      * To use this function, connection to server must be estabilished.
-     * If you want to escape string without estabilishing connection, please
-     * use static version of this function.
      *
      * Params:
      *  str = String to escape
@@ -345,7 +366,7 @@ final class MySQLDatabase : Database
     }
     
     /**
-     * Prepares new statement with speicified query
+     * Prepares new statement with specified query
      *
      * Params:
      *  query = Statement query
@@ -364,6 +385,9 @@ final class MySQLDatabase : Database
     
     /**
      * Begins transaction
+     * 
+     * Params:
+     *  level = Transaction isolation level
      *
      * Returns:
      *  Transaction
@@ -404,17 +428,17 @@ final class MySQLDatabase : Database
     }
     
     /**
-     * Last error
+     * Last error occured
      *
-     * If no error occured, returns empty error struct
+     * If no error occured, returned error instance code 
+     * property will be set to DatabaseErrorCode.NoError
      *
      * Returns:
      *  DatabaseError Last error
      */
     public override MySQLDatabaseError error() @property
     {   
-        if(_error.code == DatabaseErrorCode.NoError)
-        {
+        if(_error.code == DatabaseErrorCode.NoError) {
             _error.update(mysql_errno(_sql));
         }
             
@@ -437,10 +461,13 @@ final class MySQLDatabase : Database
      *
      * Params:
      *  table = Table name
+     * 
+     * Returns:
+     *  Table information
      */
-    public override MySqlTable tableInfo(string name)
+    public override MySQLTable tableInfo(string name)
     {
-        return new MySqlTable(this, name);
+        return new MySQLTable(this, name);
     }
     
     /**

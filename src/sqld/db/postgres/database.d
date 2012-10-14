@@ -31,8 +31,20 @@ final class PostgresDatabase : Database
     /**
      * Creates new PostgresDatabase object instance
      * 
-     * Params:
-     *  params = Associative array with connection details
+     * Autoconnect parameter takes "1", "t", "true", "y", "yes" as positive values, 
+     * all others are taken as nonpositive.
+     * 
+     * Examples:
+     * -------
+     *  auto db = new PostgresDatabase([
+     *  "host": "localhost",
+     *  "user": "root",
+     *  "pass": "foobar",
+     *  "db":   "test",
+     *  "port": "3306"
+     *  "autoconnect": "true"
+     * ]);
+     * -------
      *
      * Throws:
      *  DatabaseException if error occured
@@ -132,7 +144,7 @@ final class PostgresDatabase : Database
      *  Postgre
      *
      * Throws:
-     *  DatabaseException if could not connect
+     *  ConnectionException if could not connect
      */
     public override PostgresDatabase open()
     {
@@ -180,7 +192,7 @@ final class PostgresDatabase : Database
      * auto res = db.query("SELECT ...");
      * while(res.isValid)
      * {
-     *     writeln(res.fetchAssoc());
+     *     writeln(res.fetch());
      *     res.next();
      * }
      * ---
@@ -188,16 +200,15 @@ final class PostgresDatabase : Database
      * auto res = db.query("SELECT ...");
      * foreach(row; res)
      * {
-     *     writeln(res["id"]);
+     *     writeln(row["id"]);
      * }
      * ---
      *
      * Params:
      *  query = Query to execute
-     *  values = Values to bind
      *
      * Throws:
-     *  DatabaseException
+     *  QueryException
      *
      * Returns:
      *  PostgresResult
@@ -211,8 +222,8 @@ final class PostgresDatabase : Database
         PGresult* _res = PQexec(_sql, query.toStringz);
         auto status = PQresultStatus(_res);
         
-        if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
-            import std.stdio;
+        if(status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK)
+        {
             _error.update(to!string(PQresultErrorField(_res, 'C')));
             throw new QueryException(_error.msg, file, line);
         }
@@ -225,8 +236,6 @@ final class PostgresDatabase : Database
      * Escapes string
      *
      * To use this function, connection to server must be estabilished.
-     * If you want to escape string without estabilishing connection, please
-     * use static version of this function.
      *
      * Params:
      *  str = String to escape
@@ -242,6 +251,7 @@ final class PostgresDatabase : Database
         
         char[] buf = new char[str.length * 2 + 1];
         size_t u;
+        
         u = PQescapeStringConn(_sql, buf.ptr, str.toStringz, str.length, null);
         buf.length = u;
         
@@ -249,7 +259,7 @@ final class PostgresDatabase : Database
     }
     
     /**
-     * Prepares new statement with speicified query
+     * Prepares new statement with specified query
      *
      * Params:
      *  query = Statement query
@@ -287,6 +297,9 @@ final class PostgresDatabase : Database
     
     /**
      * Begins transaction
+     * 
+     * Params:
+     *  level = Transaction isolation level
      *
      * Returns:
      *  Transaction
@@ -306,10 +319,8 @@ final class PostgresDatabase : Database
     /**
      * Last error
      *
-     * If no error occured, returns empty error struct
-     *
-     * Todo:
-     *  Support error codes 
+     * If no error occured, returned error instance code 
+     * property will be set to DatabaseErrorCode.NoError
      *
      * Returns:
      *  DatabaseError Last error
@@ -335,6 +346,9 @@ final class PostgresDatabase : Database
      *
      * Params:
      *  table = Table name
+     * 
+     * Returns:
+     *  PostgresTable Table information
      */
     public override PostgresTable tableInfo(string name)
     {

@@ -28,21 +28,21 @@ class ConnectionException : DatabaseException
 }
 
 /**
- * Thrown if invalid connection details where specified
+ * Thrown if error occured durning executing query
  */
-class ConnectionDetailsException : DatabaseException
+class QueryException : DatabaseException
 {
     ///
     this(string txt = "", string file = __FILE__, int line = __LINE__)
     {
         super(txt, file, line);
-    }
+    }    
 }
 
 /**
- * Thrown if error occured durning executing query
+ * Thrown if error occured durning result fetching
  */
-class QueryException : DatabaseException
+class ResultException : DatabaseException
 {
     ///
     this(string txt = "", string file = __FILE__, int line = __LINE__)
