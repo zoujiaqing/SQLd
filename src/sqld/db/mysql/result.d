@@ -1,94 +1,64 @@
 module sqld.db.mysql.result;
 
-import sqld.base.database,
+import std.conv;
+
+import 
+       sqld.exception,
        sqld.base.result,
-       sqld.base.error,
-       sqld.base.row,
-       sqld.c.mysql,
-       sqld.db.mysql.database;
-       
-import std.conv : to;
+       sqld.db.mysql.c.mysql;
 
 
 /**
- * Represents query results
- *
- * This class implements ForwardRange, which allows to iterate over results.
- *
- * Examples:
- * ---
- * auto res = db.query("SELECT ...");
- * while(res.isValid)
- * {
- *     writeln(res.fetch());  
- * }
- * ---
- *
- * ---
- * auto res = db.query("SELECT ...");
- * foreach(row; res)
- * {
- *     writeln(row);
- * }
- * ---
+ * Represents MySql query result
  */
-class MySQLResult : Result
+class MySqlResult : IResult
 {
     protected
     {
         MYSQL* _db;
         MYSQL_RES* _res;
-        Row row;
         bool _usable;
+        bool _empty;
+        string[] _row;
         
         string[] _columns;
         int _columnNum;
-        
-        ulong _rows;
         ulong _index;
     }
     
     
     /**
-     * Creates new MySQLResult instance
-     *
-     * Params:  
-     *  db = Database handle
-     *  res = MySQL result
+     * Creates new MySqlResult instance
+     * 
+     * Params:
+     *  sql = MySql connection handle
+     *  res = MySql query result handle
      */
-    this(MYSQL* db, MYSQL_RES* res)
-    {
-        _db = db;
+	this(MYSQL* sql, MYSQL_RES* res)
+	{
+        _db = sql;
         _res = res;
         
         if(res !is null)
         {
             // Result has data
-            _rows = mysql_num_rows(_res);
+            //_rows = mysql_num_rows(_res);
             _columnNum = mysql_num_fields(_res);
             
-            loadColumns();            
-            _usable = true;			
-			loadRow();
+            loadColumns();
+            _usable = true;
+            _empty = readRow();
         }
         else
-        {
-            // No data, query of type INSERT and similar
-            _rows = mysql_affected_rows(_db);
-        }
-    }
+            _usable = false;
+	}
+    
     
     ~this()
     {
-        if(_usable)
-        {
-            mysql_free_result(_res);
-        }
+        free();
     }
     
-    /**
-     * Loads column names
-     */
     protected void loadColumns()
     {
         MYSQL_FIELD* field;
@@ -100,12 +70,49 @@ class MySQLResult : Result
     }
     
     
+    protected bool readRow()
+    {        
+        MYSQL_ROW crow;
+        _row = [];
+        
+        crow = mysql_fetch_row(_res);
+        
+        if(crow is null) {
+            return true;
+        }
+        
+        for(int i; i < _columnNum; i++ ) {
+            _row ~= to!string(crow[i]);
+        }
+        
+        return false;
+    }
+    
+    
+    /**
+     * Proceedes to next row
+     */
+    void popFront()
+    {   
+        _empty = readRow();
+    }
+    
+    
+    /**
+     * Returns current row
+     */
+    @property string[] front()
+    {
+        return _row;
+    }
+    
+    
     /**
      * Frees result
      *
      * After freeing instance is not usable anymore
      */
-    public override void free()
+    void free()
     {
         if(_usable)
         {
@@ -116,139 +123,24 @@ class MySQLResult : Result
     
     
     /**
-     * Fetches row
-     *
-     * This function returns cached row, loaded by next() method.
-     * Continuous calling will return same row until next() is called.
-     *
-     * Examples:
-     * ---
-     * auto res = db.query("SELECT ...");
-     * while(res.isValid)
-     * {
-     *     writeln(res.fetch());
-     *     res.next();
-     * }
-     * ---
-     *
-     * Throws:
-     *    DatabaseException
-     *
-     * Returns:
-     *  Array with current row data
+     * Checks if there are more rows remaining
      */
-    public override Row fetch(string file = __FILE__, uint line = __LINE__)
+    @property bool empty()
     {
-		return row;/*
-        MYSQL_ROW crow;
-        string[] row;
-        
-        crow = mysql_fetch_row(_res);
-        
-        if(crow is null) {
-            throw new DatabaseException("Could not fetch row.", file, line);
-        }
-        
-        for(int i; i < _columnNum; i++ ) {
-            row ~= to!string(crow[i]);
-        }
-        
-        // Sync
-        mysql_data_seek(_res, cast(uint)_index);
-        
-        return new Row(row, _columns);*/
-    }
-    
-    
-    /**
-     * Proceedes to next row
-     *
-     * If no rows are remeaining, returns false.
-     *
-     * Returns:
-     *  True if any rows are remaining, false otherwise
-     */
-    public override bool next()
-    {
-        if( ++_index >= _rows  )
-        {
-            return false;
-        }
-        
-        /*mysql_data_seek(_res, cast(uint)_index);*/
-		
-		loadRow();
-        
-        return true;
-    }
-	
-	protected void loadRow()
-	{        
-		MYSQL_ROW crow;
-        string[] _row;
-        
-        crow = mysql_fetch_row(_res);
-        
-        if(crow is null) {
-            throw new ResultException("Could not fetch row.");
-        }
-        
-        for(int i; i < _columnNum; i++ ) {
-            _row ~= to!string(crow[i]);
-        }
-        
-        /*// Sync
-        mysql_data_seek(_res, cast(uint)_index);*/
-        
-        row = new Row(_row, _columns);
-	}
-    
-    
-    /**
-     * Resets current index
-     */
-    public override void reset()
-    {
-        _index = 0;
-        mysql_data_seek(_res, _index);
-        loadRow();
-    }
-
-    /**
-     * Query result row count
-     *
-     * Returns:
-     *  Row count
-     */
-    public override ulong length() @property
-    {
-        return _rows;
+        return _empty;
     }
     
     /**
-     * Query result fields
+     * Result column names
      *
      * Returns:
-     *  Array of fields
+     *  Array of column names
      */
-    public override string[] columns() @property
+    @property string[] columns()
     {
         return _columns;
     }
     
-    /**
-     * Check if there are any rows remaining
-     * 
-     * This function can return false if result was freed 
-     * or query was not SELECT type.
-     *
-     * Returns:
-     *  True if there are any remaining rows
-     */
-    public override bool isValid() @property
-    {
-        return (_index < _rows) && _usable;
-    }
     
     /**
      * Current row index
@@ -256,8 +148,18 @@ class MySQLResult : Result
      * Returns:
      *  Current row offset
      */
-    public override ulong index() @property
+    @property ulong index()
     {
         return _index;
     }
+    
+    
+    /**
+     * Number of columns
+     */
+    @property int columnCount()
+    {
+        return _columnNum;
+    }
 }
+

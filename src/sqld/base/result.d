@@ -1,101 +1,49 @@
 module sqld.base.result;
 
-import sqld.base.row,
-       sqld.base.error;
+import sqld.base.range;
 
 /**
- * Represents database query result
- *
- * This class implements range interface.
+ * Represents abstract query result
+ * 
+ * Implements InputRange
  */
-class Result
+interface IResult : IInputRange!(string[])
 {
-    ///
-    abstract bool isValid() @property;
-    ///
-    abstract bool next();
-    ///
-    abstract void reset();
-    
     /**
-     * Columns names
+     * Gets number of columns
      */
-    abstract public string[] columns() @property;
-    
-    /// ditto
-    alias columns fields;
-    
-    /**
-     * Row count
-     * 
-     * If query was SELECT it returns number rows selected, 
-     * if any other, it returns affected rows.
-     */
-    abstract public ulong length() @property;
-    //alias length affectedRows;
+	@property int columnCount();
     
     
     /**
-     * Fetches row
-     *
-     * Returns:
-     *  Row
+     * Gets column names
      */
-    abstract public Row fetch(string file = __FILE__, uint line = __LINE__);
+    @property string[] columns();
+    
     
     /**
-     * Current row number proceeded
+     * Gets current row index
      */
-    abstract public ulong index() @property;
+    @property ulong index();
+    //@property IDataRow front();
+    
     
     /**
-     * Cleans up result
+     * Gets first cell of result as T type.
      */
-    abstract public void free();    
+    @property T first(T)();
     
-    
-    public bool empty()
-    {
-        return !isValid;
-    }
-    
-    public Row front()
-    {
-        return fetch();
-    }
-    
-    public void popFront()
-    {
-        next();
-    }
-    /**
-     * First field of first row and casts it to T
-     */
-    public T first(T = string)() @property
-    {
-        if(isValid) {
-            auto r = fetch();
-            return to!T(r[0].value);
-        } else {
-            throw new DatabaseException("Cannot fetch invalid result");
-        }
-    }
     
     /**
-     * Loops through rows
-     *
-     * Params:
-     *  Callback to call on each row occurence
+     * Is result valid?
      */
-    public void each(bool delegate(Row) dg)
-    {
-        while(isValid)
-        {
-            if(!dg(fetch()))
-                break;
-                
-            if(!next())
-                break;
-        }
-    }
+    @property bool valid();
+    
+    
+    
+    /**
+     * Deletes result and frees up resources
+     */
+    void free();
 }
+

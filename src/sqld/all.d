@@ -1,32 +1,39 @@
 module sqld.all;
 
-public import 
-     sqld.base.database,
-     sqld.base.result,
-     sqld.base.row,
-     sqld.base.error,
-     sqld.base.column,
-     sqld.base.table;
-     
-/*version(SQLD_MYSQL)
-{*/
 public import
-     sqld.db.mysql.database,
-     sqld.db.mysql.info,
-     sqld.db.mysql.result;
-//}
- 
-/*version(SQLD_SQLITE)
-{*/	
-public import
-     sqld.db.sqlite.database,
-     sqld.db.sqlite.result;
-//}
+        sqld.uri,
+        sqld.base.connection,
+        sqld.db.mysql.connection;
 
 
-/*version(SQLD_POSTGRE)
-{*/
-public import 
-     sqld.db.postgres.database,
-     sqld.db.postgres.result;
-//}
+/**
+ * Connects to database using proper database driver
+ * 
+ * Params:
+ *  uri = Connection parameters
+ *  autoConnect = Auto connect?
+ * 
+ * Returns:
+ *  Database connection
+ */
+IConnection openDatabase(string uri, bool autoConnect = true)
+{
+    Uri u = new Uri(uri);
+    IConnection conn;
+    
+    switch(u.rawscheme)
+    {
+        case "mysql":
+            conn = new MySqlConnection(uri);
+        break;
+            
+        default:
+            assert(0, "Unsupported database driver");
+    }
+    
+    if(autoConnect)
+        conn.open();
+    
+    return conn;
+}
+

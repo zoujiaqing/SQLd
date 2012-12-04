@@ -88,7 +88,7 @@ struct UriQuery
  * assert(uri.path == "/path");
  * ---------
  */
-class Uri
+final class Uri
 {   
     protected
     {
@@ -160,6 +160,9 @@ class Uri
          * Username and Password
          */
         j = uri.indexOf("/");
+        if(j == -1)
+            j = uri.length;
+        
         if(j != -1)
         {
             i = uri[0..j].indexOf("@");
@@ -231,7 +234,7 @@ class Uri
             _path = "/";
         }
     }
-	
+    
     void parseQuery()
     {
         auto parts = _rawquery.split("&");
@@ -268,14 +271,6 @@ class Uri
         _password = _password.init;
         _fragment = _fragment.init;
     }
-    
-    /**
-     * Builds Uri string
-     * 
-     * Returns:
-     *  Uri
-     */
-    alias build toString;
     
     /// ditto
     string build()

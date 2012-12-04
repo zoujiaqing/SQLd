@@ -1,191 +1,92 @@
 module sqld.base.error;
 
-import std.array     : replace, join;
-import std.conv      : to;
-
-/**
- * Thrown if there was any database-releated error
- */
-class DatabaseException : Exception
-{
-    ///
-    this(string txt = "", string file = __FILE__, int line = __LINE__)
-    {
-        super(txt, file, line);
-    }
-}
-
-/**
- * Thrown if there was error durning connecting to database, or connection was lost
- */
-class ConnectionException : DatabaseException
-{
-    ///
-    this(string txt = "", string file = __FILE__, int line = __LINE__)
-    {
-        super(txt, file, line);
-    }
-}
-
-/**
- * Thrown if error occured durning executing query
- */
-class QueryException : DatabaseException
-{
-    ///
-    this(string txt = "", string file = __FILE__, int line = __LINE__)
-    {
-        super(txt, file, line);
-    }    
-}
-
-/**
- * Thrown if error occured durning result fetching
- */
-class ResultException : DatabaseException
-{
-    ///
-    this(string txt = "", string file = __FILE__, int line = __LINE__)
-    {
-        super(txt, file, line);
-    }    
-}
-
-enum DatabaseErrorCode
-{
-    NoError,
-    
-    SocketError,
-    ConnectionError,
-    ServerError,
-        
-    OutOfSync,
-    InvalidQuery,
-    InvalidData,
-    
-    Unknown = 1024
-}
-
-
 /**
  * Represents database error
  */
-class DatabaseError
+struct SqlError
 {
-    /**
-     * Error message
-     */
-    public string message;
+    protected int _code;
+    protected DatabaseErrorType _type;
+    protected string _message;
     
-    /// ditto
-    alias message msg;
+    
     
     /**
-     * Error code
-     */
-    public int internalCode;
-    
-    /**
-     * Internal error 
-     */
-    public DatabaseErrorCode code;
-    
-    /**
-     * Creates new DatabaseError instance
-     *
-     * Params:
-     *  number  = Error code
-     */
-    public this(int code)
-    {
-        update(code);
-    }
-    
-    /**
-     * Updates error to new error code
-     */
-    public void update(int code)
-    {
-        this.internalCode = code;
-        this.code = errorToCode(code);
-        this.message = codeToString(this.code);
-    }
-    
-    /**
-     * Converts error code to DatabaseErrorCode
+     * Creates new SqlError instance
      * 
      * Params:
-     *  code = Internal error code
+     *  code = Numeric error code
+     *  type = Error type
+     *  message = Error message. May be localized.
+     */
+    this(int code, DatabaseErrorType type, string message)
+    {
+        _code = code;
+        _type = type;
+        _message = message;
+    }
+    
+    
+    /**
+     * Gets numeric error code
      * 
-     * Returns:
-     *  Converted code
+     * The code is specific to database driver.
      */
-    protected DatabaseErrorCode errorToCode(int code)
+	@property int code()
     {
-        return DatabaseErrorCode.Unknown;
+        return _code;
     }
     
-    /**
-     * Returns: Error code in string form
-     */ 
-    public string codeToString(DatabaseErrorCode c)
-    {
-        switch(c)
-        {
-            case DatabaseErrorCode.NoError:
-                return "No Error";
-            break;
-                            
-            case DatabaseErrorCode.ConnectionError:
-                return "Connection Error";
-            break;
-                
-            case DatabaseErrorCode.InvalidQuery:
-                return "Invalid query";
-            break;
-                
-            case DatabaseErrorCode.InvalidData:
-                return "Invalid data";
-            break;
-                
-            case DatabaseErrorCode.ServerError:
-                return "Server Error";
-            break;
-                
-            case DatabaseErrorCode.OutOfSync:
-                return "Out of sync";
-            break;
-            
-            default:
-                return "Unknown Error";
-        }
-    }
     
     /**
-     * Represents error as one string
-     *
-     * Returned format can be changed using second overload
-     * of this function.
-     *
-     * Returns:
-     *  Formatted error string
+     * Gets database error type
      */
-    public override string toString()
+    @property DatabaseErrorType type()
     {
-        return message;
+        return _type;
     }
     
+    
     /**
-     * Checks if any error occured
+     * Gets database error message.
+     * 
+     * Message may be localized.
      */
-    bool opCast(T)() if (is(T == bool))
+    @property string message()
     {
-        return code != DatabaseErrorCode.NoError;
+        return _message;
     }
 }
 
-class UnsupportedFeatureException : Exception {
-    this(string s, string f = __FILE__, uint l = __LINE__) {
-        super(s,f,l);
-    }
+
+/**
+ * Database error types
+ */
+enum DatabaseErrorType
+{
+    /// No error occured
+    NoError,
+    
+    /// Socket error
+    SocketError,
+    
+    /// Connection issues
+    ConnectionError,
+    
+    
+    /// Server error
+    ServerError,
+        
+    /// Out of sync
+    OutOfSync,
+    
+    /// Invalid query specified
+    InvalidQuery,
+    
+    /// Invalid query result
+    InvalidData,
+    
+    
+    /// Unknown error
+    Unknown = 1024
 }

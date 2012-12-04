@@ -1,22 +1,14 @@
-module sqld.base.row;
+module sqld.row;
 
-import sqld.base.cell;
-import std.conv      : to, parse, ConvException;
+import std.conv;
 
 /**
- * Represents table row
+ * Represents result row
  */
-class Row
+class DataRow
 {
-    /**
-     * Row columns
-     */
     protected string[] _columns;
-    
-    /**
-     * Row data
-     */
-    protected Cell[] _data;
+    protected string[] _data;
     
     
     /**
@@ -24,12 +16,14 @@ class Row
      *
      * Params:
      *  data = Row data
+     *  columns = Column names
      */
     this(string[] data, string[] columns)
     {
-        foreach(d; data) {
-			_data ~= new Cell(d);
-		}
+        /*foreach(d; data) {
+            _data ~= new Cell(d);
+        }*/
+        
         _columns = columns;
     }
     
@@ -42,7 +36,7 @@ class Row
      * Returns:
      *  Cell value
      */
-    public Cell opIndex(string name)
+    public string opIndex(string name)
     {
         for(int i; i < _columns.length; i++)
         {
@@ -61,7 +55,7 @@ class Row
      * Returns:
      *  Cell value
      */
-    public Cell opIndex(uint i)
+    public string opIndex(uint i)
     {
         return _data[i];
     }
@@ -100,7 +94,7 @@ class Row
     /// ditto
     alias columns fields;
     
-    public int opApply( int delegate(string name, Cell value) dg )
+    public int opApply( int delegate(string name, string value) dg )
     {
         int result;
         
@@ -130,7 +124,7 @@ class Row
     /**
      * Returns: Array that represents row
      */
-    public Cell[] toArray()
+    public string[] toArray()
     {
         return _data;
     }
@@ -152,7 +146,7 @@ class Row
      * If one of the fields cannot be casted to member type exception is thrown.
      *
      * Authors:
-     *  dav1d, Robik
+     *  dav1d
      *
      * Throws:
      *  Exception

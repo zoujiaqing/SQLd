@@ -1,21 +1,9 @@
+module sqld.db.mysql.c.mysql;
+
 /**
  * This is based on misc-d-stuff by Adam D. Ruppe:
  *   https://github.com/adamdruppe/misc-stuff-including-D-programming-language-web-stuff
  */
-module sqld.c.mysql;
-
-version(SQLD_LINK_LIB)
-{
-	version(Windows)
-	{
-	    pragma(lib, "libmysql");
-	}
-	version(Unix)
-	{
-	    pragma(lib, "mysql")
-	}
-}
-
 
 //import core.stdc.config;
 extern(System):
@@ -65,6 +53,8 @@ MYSQL* mysql_real_connect(MYSQL*, const(char)*, const(char)*, const(char)*, cons
 
 int mysql_query(MYSQL*, const(char)*);
 int mysql_real_query(MYSQL*, const(char)*, uint);
+
+int mysql_select_db(MYSQL*, const(char)*);
 
 void mysql_close(MYSQL*);
 uint mysql_field_count(MYSQL*);
