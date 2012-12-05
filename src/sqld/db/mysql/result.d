@@ -39,13 +39,13 @@ class MySqlResult : IResult
         _db = sql;
         _res = res;
         
+        // Result contains data
         if(res !is null)
         {
-            // Result has data
             //_rows = mysql_num_rows(_res);
             _columnNum = mysql_num_fields(_res);
             
-            loadColumns();
+            loadColumnNames();
             _usable = true;
             _empty = readRow();
         }
@@ -57,35 +57,6 @@ class MySqlResult : IResult
     ~this()
     {
         free();
-    }
-    
-    protected void loadColumns()
-    {
-        MYSQL_FIELD* field;
-        for (uint i = 0; i < _columnNum; i++)
-        {
-            field = mysql_fetch_field(_res);
-            _columns ~= to!(string)(field.name);
-        }
-    }
-    
-    
-    protected bool readRow()
-    {        
-        MYSQL_ROW crow;
-        _row = [];
-        
-        crow = mysql_fetch_row(_res);
-        
-        if(crow is null) {
-            return true;
-        }
-        
-        for(int i; i < _columnNum; i++ ) {
-            _row ~= to!string(crow[i]);
-        }
-        
-        return false;
     }
     
     
@@ -160,6 +131,47 @@ class MySqlResult : IResult
     @property int columnCount()
     {
         return _columnNum;
+    }
+    
+    
+    /**
+     * Checks if result is valid.
+     * 
+     * Returns false, if query executed produced no result, true otherwise.
+     */
+    @property bool valid()
+    {
+        return _usable;
+    }
+    
+    
+    protected void loadColumnNames()
+    {
+        MYSQL_FIELD* field;
+        for (uint i = 0; i < _columnNum; i++)
+        {
+            field = mysql_fetch_field(_res);
+            _columns ~= to!(string)(field.name);
+        }
+    }
+    
+    
+    protected bool readRow()
+    {        
+        MYSQL_ROW crow;
+        _row = [];
+        
+        crow = mysql_fetch_row(_res);
+        
+        if(crow is null) {
+            return true;
+        }
+        
+        for(int i; i < _columnNum; i++ ) {
+            _row ~= to!string(crow[i]);
+        }
+        
+        return false;
     }
 }
 

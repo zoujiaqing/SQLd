@@ -12,6 +12,7 @@ interface IConnection
      */
     @property void* handle();
     
+    
     /**
      * Checks if connection is alive
      *

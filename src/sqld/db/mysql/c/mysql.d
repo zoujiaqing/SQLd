@@ -43,7 +43,6 @@ struct MYSQL_FIELD {
 
 char mysql_autocommit(MYSQL*, char);
 
-
 const(char)* mysql_get_client_info();
 MYSQL* mysql_init(MYSQL*);
 uint mysql_errno(MYSQL*);

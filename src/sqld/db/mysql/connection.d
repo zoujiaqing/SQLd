@@ -3,11 +3,13 @@ module sqld.db.mysql.connection;
 import std.string;
 
 import sqld.db.mysql.c.mysql,
+       sqld.db.mysql.error,
        sqld.base.connection;
 
 public import
        sqld.uri,
        sqld.exception,
+       sqld.base.error,
        sqld.db.mysql.params,
        sqld.db.mysql.command,
        sqld.db.mysql.result;
@@ -68,7 +70,7 @@ class MySqlConnection : IConnection
         _conn = mysql_init(null);
         
         if(_conn is null) {
-            throw new ConnectionException("Could not initalize MySQL instance");
+            throw new ConnectionException(createError());
         }
         
         _conn = mysql_real_connect(_conn,
@@ -111,9 +113,6 @@ class MySqlConnection : IConnection
      */
     MySqlCommand createCommand(string query = "", string file = __FILE__, uint line = __LINE__)
     {
-        if(_conn == null)
-            throw new ConnectionException("", file, line);
-        
         return new MySqlCommand(this, query);
     }
     
@@ -136,6 +135,16 @@ class MySqlConnection : IConnection
     @property void* handle()
     {
         return _conn;
+    }
+    
+    
+    
+    package SqlError createError()
+    {
+        int code = mysql_errno(_conn);
+        string msg = to!string(mysql_error(_conn));
+        
+        return SqlError(code, translateError(code), msg);
     }
 }
 

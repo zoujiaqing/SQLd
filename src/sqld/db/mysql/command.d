@@ -57,7 +57,7 @@ class MySqlCommand : ICommand
         if(result is null && mysql_field_count(handle) != 0 )
         {                
              throw new QueryException(
-                "Could not store result: "~_commandText,
+                _conn.createError(),
                 file, line
              );
         }
@@ -141,7 +141,7 @@ class MySqlCommand : ICommand
         if(res)
         {
             throw new QueryException( 
-                format("Could not execute query '%s'", _commandText),
+                _conn.createError(),
                 file, line
             );
         }
