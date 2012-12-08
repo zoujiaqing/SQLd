@@ -4,7 +4,8 @@ import std.string;
 
 import sqld.db.mysql.c.mysql,
        sqld.db.mysql.error,
-       sqld.base.connection;
+       sqld.base.connection,
+       sqld.base.statement;
 
 public import
        sqld.uri,
@@ -12,7 +13,9 @@ public import
        sqld.base.error,
        sqld.db.mysql.params,
        sqld.db.mysql.command,
-       sqld.db.mysql.result;
+       sqld.db.mysql.result,
+       sqld.db.mysql.statement;
+
 
 /**
  * Represents connection to MySql database
@@ -115,6 +118,19 @@ class MySqlConnection : IConnection
     {
         return new MySqlCommand(this, query);
     }
+    
+    
+    /**
+     * Creates new prepared statement
+     * 
+     * Params:
+     *  query = Statement query
+     */
+    MySqlStatement prepare(string query, string file = __FILE__, uint line = __LINE__)
+    {
+        return new MySqlStatement(this, query, file, line);
+    }
+    
     
     
     /**

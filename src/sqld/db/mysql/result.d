@@ -2,10 +2,11 @@ module sqld.db.mysql.result;
 
 import std.conv;
 
-import 
-       sqld.exception,
+import sqld.exception,
+       sqld.field,
        sqld.base.result,
-       sqld.db.mysql.c.mysql;
+       sqld.db.mysql.c.mysql,
+       sqld.db.mysql.types;
 
 
 /**
@@ -21,8 +22,8 @@ class MySqlResult : IResult
         bool _empty;
         string[] _row;
         
-        string[] _columns;
-        int _columnNum;
+        Field[] _fields;
+        int _fieldCount;
         ulong _index;
     }
     
@@ -43,9 +44,9 @@ class MySqlResult : IResult
         if(res !is null)
         {
             //_rows = mysql_num_rows(_res);
-            _columnNum = mysql_num_fields(_res);
+            _fieldCount = mysql_num_fields(_res);
             
-            loadColumnNames();
+            loadFields();
             _usable = true;
             _empty = readRow();
         }
@@ -102,22 +103,16 @@ class MySqlResult : IResult
     }
     
     /**
-     * Result column names
-     *
-     * Returns:
-     *  Array of column names
+     * Gets result field infos
      */
-    @property string[] columns()
+    @property Field[] fields()
     {
-        return _columns;
+        return _fields;
     }
     
     
     /**
-     * Current row index
-     *
-     * Returns:
-     *  Current row offset
+     * Gets current row index
      */
     @property ulong index()
     {
@@ -126,11 +121,11 @@ class MySqlResult : IResult
     
     
     /**
-     * Number of columns
+     * Gets number of fields
      */
-    @property int columnCount()
+    @property int fieldCount()
     {
-        return _columnNum;
+        return _fieldCount;
     }
     
     
@@ -145,13 +140,16 @@ class MySqlResult : IResult
     }
     
     
-    protected void loadColumnNames()
+    protected void loadFields()
     {
         MYSQL_FIELD* field;
-        for (uint i = 0; i < _columnNum; i++)
+        _fields.length = _fieldCount;
+        
+        for (uint i = 0; i < _fieldCount; i++)
         {
             field = mysql_fetch_field(_res);
-            _columns ~= to!(string)(field.name);
+            _fields[i].name = to!string(field.name);
+            _fields[i].type = genericFieldTypeOf(field.type);
         }
     }
     
@@ -167,7 +165,7 @@ class MySqlResult : IResult
             return true;
         }
         
-        for(int i; i < _columnNum; i++ ) {
+        for(int i; i < _fieldCount; i++ ) {
             _row ~= to!string(crow[i]);
         }
         

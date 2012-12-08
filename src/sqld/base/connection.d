@@ -1,11 +1,12 @@
 module sqld.base.connection;
 
-import sqld.base.command;
+import sqld.base.command,
+       sqld.base.statement;
 
 /**
  * Represents abstract connection to Database
  */
-interface IConnection
+interface IConnection : IStatementProvider
 {
     /**
      * Underlying database connection handle

@@ -7,9 +7,12 @@ import sqld.base.error;
  */
 class DatabaseException : Exception
 {
-    this(SqlError msg, string file = __FILE__, uint line = __LINE__)
+    SqlError error;
+    
+    this(SqlError err, string file = __FILE__, uint line = __LINE__)
     {
-        super(msg.toString(), file, line);
+        this.error = err;
+        super(err.toString(), file, line);
     }
 }
 
@@ -19,9 +22,9 @@ class DatabaseException : Exception
  */
 class ConnectionException : DatabaseException
 {
-    this(SqlError msg, string file = __FILE__, uint line = __LINE__)
+    this(SqlError err, string file = __FILE__, uint line = __LINE__)
     {
-        super(msg, file, line);
+        super(err, file, line);
     }
 }
 
@@ -31,9 +34,21 @@ class ConnectionException : DatabaseException
  */
 class QueryException : DatabaseException
 {
-    this(SqlError msg, string file = __FILE__, uint line = __LINE__)
+    this(SqlError err, string file = __FILE__, uint line = __LINE__)
     {
-        super(msg, file, line);
+        super(err, file, line);
+    }
+}
+
+
+/**
+ * Thrown when there was statment releated problem
+ */
+class StatementException : DatabaseException
+{
+    this(SqlError err, string file = __FILE__, uint line = __LINE__)
+    {
+        super(err, file, line);
     }
 }
 
@@ -43,9 +58,9 @@ class QueryException : DatabaseException
  */
 class ResultException : DatabaseException
 {
-    this(SqlError msg, string file = __FILE__, uint line = __LINE__)
+    this(SqlError err, string file = __FILE__, uint line = __LINE__)
     {
-        super(msg, file, line);
+        super(err, file, line);
     }
 }
 

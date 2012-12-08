@@ -1,6 +1,7 @@
 module sqld.base.result;
 
-import sqld.base.range;
+import sqld.base.range,
+       sqld.field;
 
 /**
  * Represents abstract query result
@@ -10,15 +11,15 @@ import sqld.base.range;
 interface IResult : IInputRange!(string[])
 {
     /**
-     * Gets number of columns
+     * Gets number of fields
      */
-	@property int columnCount();
+	@property int fieldCount();
     
     
     /**
-     * Gets column names
+     * Gets fields info
      */
-    @property string[] columns();
+    @property Field[] fields();
     
     
     /**

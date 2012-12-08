@@ -91,7 +91,7 @@ class MySqlCommand : ICommand
      */
     T executeScalar(T)(string file = __FILE__, uint line = __LINE__)
     {
-        auto res = executeResult();
+        auto res = executeQuery();
         
         return to!T(res.front[0]);
     }
