@@ -10,13 +10,13 @@ public import sqld.db.mysql.c.mysql,
  */
 template MySqlTypeOf(T)
 {
-    static if(is(T == int))
+    static if(is(T == int) || is(T == uint))
         alias enum_field_types.MYSQL_TYPE_LONG MySqlTypeOf;
     
     else static if(is(T == bool))
         alias enum_field_types.MYSQL_TYPE_BIT MySqlTypeOf;
     
-    else static if(is(T == byte[]))
+    else static if(is(T == byte[]) || is(T == ubyte[]))
         alias enum_field_types.MYSQL_TYPE_BLOB MySqlTypeOf;
     
     else static if(is(T == char[]))
@@ -25,10 +25,10 @@ template MySqlTypeOf(T)
     else static if(is(T == string))
         alias enum_field_types.MYSQL_TYPE_STRING MySqlTypeOf;
     
-    else static if(is(T == byte))
+    else static if(is(T == byte) || is(T == ubyte))
         alias enum_field_types.MYSQL_TYPE_TINY MySqlTypeOf;
     
-    else static if(is(T == short))
+    else static if(is(T == short) || is(T == ushort))
         alias enum_field_types.MYSQL_TYPE_SHORT MySqlTypeOf;
     
     else static if(is(T == float))

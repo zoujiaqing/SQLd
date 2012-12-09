@@ -20,11 +20,8 @@ class DataRow
      */
     this(string[] data, string[] columns)
     {
-        /*foreach(d; data) {
-            _data ~= new Cell(d);
-        }*/
-        
         _columns = columns;
+        _data = data;
     }
     
     /**

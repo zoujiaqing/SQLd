@@ -22,11 +22,19 @@ import sqld.base.statement,
  * 
  * Used to execute stetements and receive results.
  * 
+ * Types supported in binding and receiving:
+ *  (u)int, (u)byte, (u)short, string, float, double, DateTime, TimeOfDay, Date
+ * 
+ * 
  * Examples:
  * ----
  * auto stmt = conn.prepare("SELECT ...");
  * stmt.execute();
  * 
+ * while(stmt.next())
+ * {
+ *     auto row = stmt.read!(int, string...)
+ * }
  * ----
  */
 class MySqlStatement : IStatement
@@ -89,7 +97,7 @@ class MySqlStatement : IStatement
      * Prepares SQL statement with given query
      * 
      * You can reset the statement to state after
-     * calling `prepare()` using `reset()` function
+     * calling `prepare()` using `reset()` function.
      * 
      * Params:
      *  query = Query to prepare
@@ -131,6 +139,13 @@ class MySqlStatement : IStatement
     {
         _valid = false;
         _empty = true;
+        _currentBind = 0;
+        _paramBinds = [];
+        
+        foreach(r; _refKeeper)
+        {
+            free(r);
+        }
         
         mysql_stmt_reset(_stmt);
         
@@ -216,11 +231,39 @@ class MySqlStatement : IStatement
             time.year   = param.year;
             time.month  = param.month;
             time.day    = param.day;
-            time.hour   = param.year;
+            time.hour   = param.hour;
+            time.minute = param.minute;
+            time.second = param.second;
+            time.neg    = param < DateTime();
+            time.time_type = enum_mysql_timestamp_type.MYSQL_TIMESTAMP_DATETIME;
+            
+            _refKeeper[pos] = malloc(time.sizeof);
+            *cast(MYSQL_TIME*)_refKeeper[pos] = time;
+            _paramBinds[pos].buffer = _refKeeper[pos];
+        }
+        else static if(is(T == Date))
+        {
+            MYSQL_TIME time;
+            
+            time.year   = param.year;
+            time.month  = param.month;
+            time.day    = param.day;
+            time.neg    = param < Date();
+            time.time_type = enum_mysql_timestamp_type.MYSQL_TIMESTAMP_DATE;
+            
+            _refKeeper[pos] = malloc(time.sizeof);
+            *cast(MYSQL_TIME*)_refKeeper[pos] = time;
+            _paramBinds[pos].buffer = _refKeeper[pos];
+        }
+        else static if(is(T == TimeOfDay))
+        {
+            MYSQL_TIME time;
+            
+            time.hour   = param.hour;
             time.minute = param.minute;
             time.second = param.second;
             time.neg    = 0;
-            time.time_type = enum_mysql_timestamp_type.MYSQL_TIMESTAMP_DATETIME;
+            time.time_type = enum_mysql_timestamp_type.MYSQL_TIMESTAMP_TIME;
             
             _refKeeper[pos] = malloc(time.sizeof);
             *cast(MYSQL_TIME*)_refKeeper[pos] = time;
@@ -232,6 +275,7 @@ class MySqlStatement : IStatement
             *cast(T*)_refKeeper[pos] = param;
             _paramBinds[pos].buffer = _refKeeper[pos];
         }
+        
         
         return this;
     }
@@ -251,6 +295,8 @@ class MySqlStatement : IStatement
             throw new StatementException(createStmtError(), file, line);
         }
         
+        _valid = _fieldCount > 0;
+        
         if(_valid)
         {
             bindResult(file, line);
@@ -263,8 +309,6 @@ class MySqlStatement : IStatement
         if(res) {
             throw new StatementException(createStmtError(), file, line);
         }
-        
-        _valid = _fieldCount > 0;
         
         return this;
     }
@@ -392,7 +436,10 @@ class MySqlStatement : IStatement
     }
     
     
-
+    
+    /*
+     * Reads result metadata if any
+     */
     protected void readMetadata()
     {
         auto res = mysql_stmt_result_metadata(_stmt);
@@ -415,6 +462,9 @@ class MySqlStatement : IStatement
     }
     
     
+    /*
+     * Binds MySql data references to respective result element
+     */
     protected void bindResult(string file = __FILE__, uint line = __LINE__)
     {
         foreach(i; 0 .. _fieldCount)
@@ -435,10 +485,12 @@ class MySqlStatement : IStatement
             _resultBinds[i].is_null = &_results[i].isNull;
             _resultBinds[i].error = _results[i].error.ptr;
         }
-        
     }
     
     
+    /*
+     * Validates parameter bindings
+     */
     protected void validateBinds(string file, uint line)
     {
         foreach(bind; _paramBinds)
@@ -449,6 +501,12 @@ class MySqlStatement : IStatement
         }
     }
     
+    
+    /*
+     * Reads specific column from statement result
+     * 
+     * v parameter contains read data
+     */
     protected void readColumn(T)(int n, ref T v)
     {
         static if(isDynamicArray!T)
@@ -469,7 +527,10 @@ class MySqlStatement : IStatement
             
             if(time.time_type != enum_mysql_timestamp_type.MYSQL_TIMESTAMP_DATETIME)
                 assert(0, format("Tried to read field as DateTime, field time type: %s", to!string(time.time_type)));
+            
             v = DateTime(time.year, time.month, time.day, time.hour, time.minute, time.second);
+            if(time.neg)
+                v.year = -v.year;
         }
         else static if(is(T == TimeOfDay))
         {
@@ -490,6 +551,8 @@ class MySqlStatement : IStatement
                 assert(0, format("Tried to read field as Date, field time type: %s", to!string(time.time_type)));
             
             v = Date(time.year, time.month, time.day);
+            if(time.neg)
+                v.year = -v.year;
         }
         else
         {
@@ -498,6 +561,9 @@ class MySqlStatement : IStatement
     }
     
     
+    /*
+     * Creates statement error exception from error number and message
+     */
     protected SqlError createStmtError()
     {
         int code = mysql_stmt_errno(_stmt);

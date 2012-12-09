@@ -2,7 +2,8 @@ module sqld.db.mysql.result;
 
 import std.conv;
 
-import sqld.exception,
+import sqld.row,
+       sqld.exception,
        sqld.field,
        sqld.base.result,
        sqld.db.mysql.c.mysql,
@@ -20,9 +21,11 @@ class MySqlResult : IResult
         MYSQL_RES* _res;
         bool _usable;
         bool _empty;
-        string[] _row;
+        DataRow _row;
+        ulong _rows;
         
         Field[] _fields;
+        string[] _fieldNames;
         int _fieldCount;
         ulong _index;
     }
@@ -43,7 +46,7 @@ class MySqlResult : IResult
         // Result contains data
         if(res !is null)
         {
-            //_rows = mysql_num_rows(_res);
+            _rows = mysql_num_rows(_res);
             _fieldCount = mysql_num_fields(_res);
             
             loadFields();
@@ -67,13 +70,14 @@ class MySqlResult : IResult
     void popFront()
     {   
         _empty = readRow();
+        ++_index;
     }
     
     
     /**
      * Returns current row
      */
-    @property string[] front()
+    @property DataRow front()
     {
         return _row;
     }
@@ -99,7 +103,7 @@ class MySqlResult : IResult
      */
     @property bool empty()
     {
-        return _empty;
+        return _empty || !_usable;
     }
     
     /**
@@ -140,35 +144,53 @@ class MySqlResult : IResult
     }
     
     
+    /**
+     * Gets result length in row count
+     */
+    @property ulong length()
+    {
+        return _rows;
+    }
+    
+    
+    /*
+     * Loads field data
+     */
     protected void loadFields()
     {
         MYSQL_FIELD* field;
         _fields.length = _fieldCount;
+        _fieldNames.length = _fieldCount;
         
         for (uint i = 0; i < _fieldCount; i++)
         {
             field = mysql_fetch_field(_res);
             _fields[i].name = to!string(field.name);
             _fields[i].type = genericFieldTypeOf(field.type);
+            _fieldNames[i] = _fields[i].name;
         }
     }
     
     
+    /*
+     * Fetches next row
+     */
     protected bool readRow()
-    {        
+    {
         MYSQL_ROW crow;
-        _row = [];
+        string[] _strRow;
+        
         
         crow = mysql_fetch_row(_res);
         
         if(crow is null) {
             return true;
         }
-        
         for(int i; i < _fieldCount; i++ ) {
-            _row ~= to!string(crow[i]);
+            _strRow ~= to!string(crow[i]);
         }
         
+        _row = new DataRow(_strRow, _fieldNames);
         return false;
     }
 }

@@ -4,6 +4,7 @@ import std.string;
 
 import sqld.db.mysql.c.mysql,
        sqld.db.mysql.error,
+       sqld.db.mysql.table,
        sqld.base.connection,
        sqld.base.statement;
 
@@ -24,6 +25,7 @@ class MySqlConnection : IConnection
 {
     protected MySqlConnectionParams _params;
     protected MYSQL* _conn;
+    protected MySqlTableInfo _tables;
     
     
     
@@ -77,12 +79,16 @@ class MySqlConnection : IConnection
         }
         
         _conn = mysql_real_connect(_conn,
-                _params.host.toStringz(),
-                _params.user.toStringz(),
-                _params.password.toStringz(),
-                _params.database.toStringz(),
-                _params.port,
-                null, 0);
+                    _params.host.toStringz(),
+                    _params.user.toStringz(),
+                    _params.password.toStringz(),
+                    _params.database.toStringz(),
+                    _params.port,
+                    null, 0
+                );
+        
+        mysql_set_character_set(_conn, "utf8".toStringz());
+        _tables = new MySqlTableInfo(this);
         
         return this;
     }
@@ -121,6 +127,40 @@ class MySqlConnection : IConnection
     
     
     /**
+     * Executes query and returns result
+     * 
+     * If result is empty, or executed query did not produce result,
+     * returned value should have .valid property set to false.
+     * 
+     * If executing query fails, `QueryException is thrown`.
+     * 
+     * Returns:
+     *  Query result
+     */
+    MySqlResult executeQuery(string query, string file = __FILE__, uint line = __LINE__)
+    {
+        return createCommand(query, file, line).executeQuery(file, line);
+    }
+    
+    /// ditto
+    alias executeQuery executeResult;
+    
+    
+    /**
+     * Executes query and returns affected rows
+     * 
+     * If query fails, QueryException is thrown.
+     * 
+     * Returns:
+     *  Number of rows affected
+     */
+    ulong execute(string query, string file = __FILE__, uint line = __LINE__)
+    {
+        return createCommand(query, file, line).execute(file, line);
+    }
+    
+    
+    /**
      * Creates new prepared statement
      * 
      * Params:
@@ -154,7 +194,32 @@ class MySqlConnection : IConnection
     }
     
     
+    /**
+     * Gets server version
+     * 
+     * Number that reperesents the version is in following format:
+     * 
+     *  major_version*10000 + minor_version *100 + sub_version
+     */
+    @property uint serverVersion()
+    {
+        return mysql_get_server_version(_conn);
+    }
     
+    
+    /**
+     * Gets table information
+     */
+    @property MySqlTableInfo tables()
+    {
+        return _tables;
+    }
+    
+    
+    
+    /*
+     * Creates database error exception from MySql error number and message
+     */
     package SqlError createError()
     {
         int code = mysql_errno(_conn);

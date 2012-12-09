@@ -1,7 +1,8 @@
 module sqld.db.mysql.params;
 
 import sqld.uri,
-       sqld.exception;
+       sqld.exception,
+       sqld.util;
 
 /**
  * Represents MySql connection parameters
@@ -149,7 +150,7 @@ final class MySqlConnectionParams
         }
         
         try {
-            autoConnect = uri.query["autoconnect"] == "true" ? true : false;
+            autoConnect = uri.query["autoconnect"].strToBool();
         } catch(Exception e) {
         }
         
@@ -205,7 +206,7 @@ final class MySqlConnectionParams
         if("autoconnect" !in params) {
             autoConnect = false;
         } else {
-            autoConnect = params["autoconnect"] == "true" ? true : false;
+            autoConnect = params["autoconnect"].strToBool();
         }
         
         return this;

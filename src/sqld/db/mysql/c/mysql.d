@@ -8,6 +8,7 @@ module sqld.db.mysql.c.mysql;
 //import core.stdc.config;
 extern(System):
 struct MYSQL {}
+
 struct MYSQL_RES {}
 
 struct LIST {
@@ -139,6 +140,8 @@ enum enum_stmt_attr_type
 enum MYSQL_DATA_TRUNCATED = 100;
 enum MYSQL_NO_DATA = 101;
 
+const(char)* mysql_character_set_name(MYSQL*);
+int mysql_set_character_set(MYSQL*, const(char)*);
 char mysql_autocommit(MYSQL*, char);
 
 const(char)* mysql_get_client_info();

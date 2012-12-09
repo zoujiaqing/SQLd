@@ -80,3 +80,19 @@ struct Field
         this.type = type;
     }
 }
+
+
+/**
+ * 
+ */
+enum KeyType
+{
+    ///
+    None,
+    
+    ///
+    Primary,
+    
+    ///
+    Unique
+}

@@ -1,6 +1,7 @@
 module sqld.base.result;
 
-import sqld.base.range,
+import sqld.row,
+       sqld.base.range,
        sqld.field;
 
 /**
@@ -8,7 +9,7 @@ import sqld.base.range,
  * 
  * Implements InputRange
  */
-interface IResult : IInputRange!(string[])
+interface IResult : IInputRange!(DataRow)
 {
     /**
      * Gets number of fields
@@ -26,7 +27,12 @@ interface IResult : IInputRange!(string[])
      * Gets current row index
      */
     @property ulong index();
-    //@property IDataRow front();
+    
+    
+    /**
+     * Gets current row data
+     */
+    @property DataRow front();
     
     
     /**

@@ -65,6 +65,11 @@ class MySqlCommand : ICommand
         return new MySqlResult(handle, result);
     }
     
+    
+    /// ditto
+    alias executeQuery executeResult;
+    
+    
     /**
      * Executes query and returns affected rows
      * 
@@ -132,18 +137,15 @@ class MySqlCommand : ICommand
     }
     
     
+    /*
+     * Queries database, throws exception if failed
+     */
     protected void query(string file = __FILE__, uint line = __LINE__)
     {
-        int res;
+        int res = mysql_query(cast(MYSQL*)_conn.handle, _commandText.toStringz());
         
-        res = mysql_query(cast(MYSQL*)_conn.handle, _commandText.toStringz());
-        
-        if(res)
-        {
-            throw new QueryException( 
-                _conn.createError(),
-                file, line
-            );
+        if(res) {
+            throw new QueryException( _conn.createError(), file, line);
         }
     }
 }
